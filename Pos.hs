@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings, TupleSections, ViewPatterns #-}
 
-module Pos ( Pos(..), Dir(..) ) where
+module Pos ( Pos(..), Dir(..), move ) where
 
 import Control.Applicative ( (<$>), (<*>) )
 import Data.Aeson ((.:), FromJSON(..), Value(..))
@@ -10,6 +10,12 @@ data Dir = E | W | SE | SW
 
 data Pos = Pos { posX :: Int, posY :: Int }
          deriving ( Eq )
+
+move :: Pos -> Dir -> Pos
+move (Pos x y) E = Pos (x + 1) y
+move (Pos x y) W = Pos (x - 1) y
+move (Pos x y) SE = Pos (x + (y `mod` 2)) (y + 1)
+move (Pos x y) SW = Pos (x - ((y + 1) `mod` 2)) (y + 1)
 
 instance Ord Pos where
   compare (Pos x1 y1) (Pos x2 y2) = compare (y1, x1) (y2, x2)
