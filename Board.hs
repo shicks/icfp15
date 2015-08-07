@@ -42,8 +42,3 @@ instance FromJSON Board where
   parseJSON (Object v) = board <$> (v .: "width") <*> (v .: "height") <*> (v .: "filled")
     where board w h f = fill f $ empty w h
   parseJSON v = fail $ "Bad Board: " ++ show v
-
-data CLI = CLI { files :: [String]
-               , time  :: Int
-               , mem   :: Int
-               , power :: [String] }
