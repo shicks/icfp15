@@ -3,12 +3,13 @@ module Main where
 import Control.Monad ( forM_ )
 import System.Environment ( getArgs )
 
-import Board
+import Problem
 
 main :: IO ()
 main = do
   args <- getArgs
   forM_ args $ \f -> do
-    b <- readBoard f
+    b <- readProblem f
+    putStrLn $ "=====" ++ (replicate (length f) '=')
     putStrLn $ "File " ++ f
     print b

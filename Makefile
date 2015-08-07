@@ -1,5 +1,7 @@
-showboard: Board.hs ShowBoard.hs
+SRCS=Board.hs Pos.hs Problem.hs Unit.hs
+
+showboard: $(SRCS) ShowBoard.hs
 	ghc -o showboard --make ShowBoard
 
-main: Board.hs Main.hs
+main: $(SRCS) Main.hs
 	ghc -o main --make Main
