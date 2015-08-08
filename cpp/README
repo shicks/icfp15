@@ -1,0 +1,7 @@
+Compilation on Debian unstable (other Linux version should work too):
+
+Needs libjsoncpp and libboost.  Doing:
+
+$ apt-get install libjsoncpp-dev libboost-all-dev
+
+works for me.
