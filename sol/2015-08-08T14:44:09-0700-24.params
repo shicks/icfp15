@@ -1,0 +1,48 @@
+Problems: problems/problem_24.json
+Words:    "ei!" "ia! ia!" "r'lyeh" "yuggoth"
+Args:     ./main -f problems/problem_24.json -p ei! -p ia! ia! -p r'lyeh -p yuggoth --tag sol/2015-08-08T14:44:09-0700-24
+Commit:   3b1d582e64915e080672f29f92861357562d1c50
+
+Stat:
+ Game.hs | 5 +++--
+ Unit.hs | 2 +-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+===DIFF===
+diff --git a/Game.hs b/Game.hs
+index 0f1ab33..050aa5f 100644
+--- a/Game.hs
++++ b/Game.hs
+@@ -8,8 +8,6 @@ import Unit
+ import Problem
+ import Source
+ 
+-import Debug.Trace
+-
+ import Control.Applicative ( (<$>), (<*>) )
+ import Control.Arrow ( first )
+ import Data.Aeson ((.:), FromJSON(..), Value(..))
+@@ -21,6 +19,9 @@ import Data.List ( maximumBy )
+ import Data.Ord ( comparing )
+ import qualified Data.Set as S
+ 
++--import Debug.Trace
++trace _ x = x
++
+ data Piece = Piece Unit Pos Int  -- unit, position, rotation
+            deriving ( Show )
+ 
+diff --git a/Unit.hs b/Unit.hs
+index 76f1612..812ebdb 100644
+--- a/Unit.hs
++++ b/Unit.hs
+@@ -57,7 +57,7 @@ instance Show Unit where
+            ++ show' False (range (Pos 0 0, extent))
+     where width = 1 + posX extent
+           show' _ [] = ""
+-          show' offset ps = (if offset then (' ':) else id) $ row ps $
++          show' offset ps = (if offset then {- (' ':) -} id else id) $ row ps $
+                             show' (not offset) (drop width ps)
+           row [] _ = ""
+           row ps rest = '|':row' (take width ps) rest
+

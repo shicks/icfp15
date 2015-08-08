@@ -8,8 +8,6 @@ import Unit
 import Problem
 import Source
 
-import Debug.Trace
-
 import Control.Applicative ( (<$>), (<*>) )
 import Control.Arrow ( first )
 import Data.Aeson ((.:), FromJSON(..), Value(..))
@@ -17,9 +15,12 @@ import Data.Array ( Array,
                     accum, array, assocs, bounds, elems, indices, ixmap, listArray, 
                     (!), (//) )
 import Data.Ix ( inRange, range )
-import Data.List ( maximumBy )
+import Data.List ( maximumBy, sort )
 import Data.Ord ( comparing )
 import qualified Data.Set as S
+
+import Debug.Trace
+-- trace _ x = x
 
 data Piece = Piece Unit Pos Int  -- unit, position, rotation
            deriving ( Show )
@@ -69,7 +70,7 @@ score ls_old piece board = points - gap_penalty + height_bonus + same_row_bonus
         line_points = 100 * (1 + ls) * ls `div` 2
         cellsList = realize piece
         cellsSet = S.fromList cellsList
-        ys = uniq $ map posY cellsList
+        ys = uniq $ sort $ map posY cellsList
         ls = length $ filter full ys
         same_row_bonus = (sum $ map same_row ys) * same_row_factor
         same_row y = length $ filter (\p -> (cells board ! p) || (p `S.member` cellsSet)) $
@@ -131,8 +132,8 @@ hasPower (_, w, _) = not $ null w
 type Spot = (Pos, Int, String, Power) -- pos, rot, sol, power
 
 -- Actually explore
-findBest :: [String] -> Board -> Piece -> Spot
-findBest wordList board (Piece unit p r) = search [(p, r, "", ([], "", ""))] S.empty S.empty
+findBest :: Power -> [String] -> Board -> Piece -> Spot
+findBest initialPower wordList board (Piece unit p r) = search [(p, r, "", initialPower)] S.empty S.empty
   where search :: [Spot] -> S.Set Spot -> S.Set Spot -> Spot
         search [] end _ = findMax end
         search (spot@(_,_,_,w):queue) end seen
@@ -172,21 +173,21 @@ playGame tag words (Problem id initialBoard units sources) = play sources
         play (source:rest) = play1 source : play rest
         play1 :: Source -> Output
         play1 source = Output id (seed source) tag $
-                       playSeed initialBoard $ map getUnit $ runSource source
+                       playSeed ([], "", "") initialBoard $ map getUnit $ runSource source
         getUnit :: Int -> Unit
         getUnit i = units !! (i `mod` numUnits)
         numUnits = length units
-        playSeed :: Board -> [Unit] -> String
-        playSeed _ [] = trace "OUT OF UNITS" ""
-        playSeed board (unit:rest) = trace ("playSeed\n" ++ show board ++ show unit) $
-                                     playPiece (spawn unit board)
+        playSeed :: Power -> Board -> [Unit] -> String
+        playSeed _ _ [] = trace "OUT OF UNITS" ""
+        playSeed power board (unit:rest) = trace ("playSeed\n" ++ show board ++ show unit) $
+                                           playPiece (spawn unit board)
           where playPiece :: Piece -> String
                 playPiece piece@(Piece unit _ _)
                   | not $ valid piece board = trace ("INVALID SPAWN: " ++ show piece) $
                                               ""
                   | otherwise = trace ("Locking: " ++ show pos ++ ": " ++ reverse sol) $
-                                reverse sol ++ playSeed board' rest
-                  where (pos, rot, sol, _) = findBest words board piece
+                                reverse sol ++ playSeed ([], w, q) board' rest
+                  where (pos, rot, sol, (_, w, q)) = findBest power words board piece
                         board' = trace ("Realized: " ++ show realized) $
                                  fill realized board
                         realized = realize $ Piece unit pos rot

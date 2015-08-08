@@ -57,7 +57,7 @@ instance Show Unit where
            ++ show' False (range (Pos 0 0, extent))
     where width = 1 + posX extent
           show' _ [] = ""
-          show' offset ps = (if offset then (' ':) else id) $ row ps $
+          show' offset ps = (if offset then {- (' ':) -} id else id) $ row ps $
                             show' (not offset) (drop width ps)
           row [] _ = ""
           row ps rest = '|':row' (take width ps) rest

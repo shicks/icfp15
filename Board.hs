@@ -13,7 +13,7 @@ import Data.Array ( Array,
                     (!), (//) )
 import qualified Data.ByteString.Lazy as B
 import Data.Ix ( Ix(..) )
-import Data.List ( intercalate )
+import Data.List ( intercalate, sort )
 
 data Board = Board { cells :: Array Pos Bool }
 
@@ -42,7 +42,7 @@ type YMap = Int -> Maybe Int
 fill :: [Pos] -> Board -> Board
 fill ps (Board cs) = clearLines ys $
                      Board $ accum (const id) cs $ map (\p -> (p, True)) ps
-  where ys = uniq $ map posY ps
+  where ys = uniq $ sort $ map posY ps  -- why wasn't it sorted at the start?!?
         uniq (x:y:xs) | x == y = uniq (x:xs)
         uniq (x:xs) = x:uniq xs
         uniq [] = []

@@ -1,0 +1,135 @@
+Problems: problems/problem_7.json
+Words:    "ei!" "ia! ia!" "r'lyeh" "yuggoth" "ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn."
+Args:     ./main -f problems/problem_7.json -p ei! -p ia! ia! -p r'lyeh -p yuggoth -p ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn. --tag sol/2015-08-08T16:41:25-0700-7
+Commit:   3b1d582e64915e080672f29f92861357562d1c50
+
+Stat:
+ Board.hs |  4 ++--
+ Game.hs  | 27 ++++++++++++++-------------
+ Unit.hs  |  2 +-
+ words    |  1 +
+ 4 files changed, 18 insertions(+), 16 deletions(-)
+
+===DIFF===
+diff --git a/Board.hs b/Board.hs
+index 98cb77f..4c2ed91 100644
+--- a/Board.hs
++++ b/Board.hs
+@@ -13,7 +13,7 @@ import Data.Array ( Array,
+                     (!), (//) )
+ import qualified Data.ByteString.Lazy as B
+ import Data.Ix ( Ix(..) )
+-import Data.List ( intercalate )
++import Data.List ( intercalate, sort )
+ 
+ data Board = Board { cells :: Array Pos Bool }
+ 
+@@ -42,7 +42,7 @@ type YMap = Int -> Maybe Int
+ fill :: [Pos] -> Board -> Board
+ fill ps (Board cs) = clearLines ys $
+                      Board $ accum (const id) cs $ map (\p -> (p, True)) ps
+-  where ys = uniq $ map posY ps
++  where ys = uniq $ sort $ map posY ps  -- why wasn't it sorted at the start?!?
+         uniq (x:y:xs) | x == y = uniq (x:xs)
+         uniq (x:xs) = x:uniq xs
+         uniq [] = []
+diff --git a/Game.hs b/Game.hs
+index 0f1ab33..ff3faff 100644
+--- a/Game.hs
++++ b/Game.hs
+@@ -8,8 +8,6 @@ import Unit
+ import Problem
+ import Source
+ 
+-import Debug.Trace
+-
+ import Control.Applicative ( (<$>), (<*>) )
+ import Control.Arrow ( first )
+ import Data.Aeson ((.:), FromJSON(..), Value(..))
+@@ -17,10 +15,13 @@ import Data.Array ( Array,
+                     accum, array, assocs, bounds, elems, indices, ixmap, listArray, 
+                     (!), (//) )
+ import Data.Ix ( inRange, range )
+-import Data.List ( maximumBy )
++import Data.List ( maximumBy, sort )
+ import Data.Ord ( comparing )
+ import qualified Data.Set as S
+ 
++import Debug.Trace
++-- trace _ x = x
++
+ data Piece = Piece Unit Pos Int  -- unit, position, rotation
+            deriving ( Show )
+ 
+@@ -69,7 +70,7 @@ score ls_old piece board = points - gap_penalty + height_bonus + same_row_bonus
+         line_points = 100 * (1 + ls) * ls `div` 2
+         cellsList = realize piece
+         cellsSet = S.fromList cellsList
+-        ys = uniq $ map posY cellsList
++        ys = uniq $ sort $ map posY cellsList
+         ls = length $ filter full ys
+         same_row_bonus = (sum $ map same_row ys) * same_row_factor
+         same_row y = length $ filter (\p -> (cells board ! p) || (p `S.member` cellsSet)) $
+@@ -131,8 +132,8 @@ hasPower (_, w, _) = not $ null w
+ type Spot = (Pos, Int, String, Power) -- pos, rot, sol, power
+ 
+ -- Actually explore
+-findBest :: [String] -> Board -> Piece -> Spot
+-findBest wordList board (Piece unit p r) = search [(p, r, "", ([], "", ""))] S.empty S.empty
++findBest :: Power -> [String] -> Board -> Piece -> Spot
++findBest initialPower wordList board (Piece unit p r) = search [(p, r, "", initialPower)] S.empty S.empty
+   where search :: [Spot] -> S.Set Spot -> S.Set Spot -> Spot
+         search [] end _ = findMax end
+         search (spot@(_,_,_,w):queue) end seen
+@@ -172,21 +173,21 @@ playGame tag words (Problem id initialBoard units sources) = play sources
+         play (source:rest) = play1 source : play rest
+         play1 :: Source -> Output
+         play1 source = Output id (seed source) tag $
+-                       playSeed initialBoard $ map getUnit $ runSource source
++                       playSeed ([], "", "") initialBoard $ map getUnit $ runSource source
+         getUnit :: Int -> Unit
+         getUnit i = units !! (i `mod` numUnits)
+         numUnits = length units
+-        playSeed :: Board -> [Unit] -> String
+-        playSeed _ [] = trace "OUT OF UNITS" ""
+-        playSeed board (unit:rest) = trace ("playSeed\n" ++ show board ++ show unit) $
+-                                     playPiece (spawn unit board)
++        playSeed :: Power -> Board -> [Unit] -> String
++        playSeed _ _ [] = trace "OUT OF UNITS" ""
++        playSeed power board (unit:rest) = trace ("playSeed\n" ++ show board ++ show unit) $
++                                           playPiece (spawn unit board)
+           where playPiece :: Piece -> String
+                 playPiece piece@(Piece unit _ _)
+                   | not $ valid piece board = trace ("INVALID SPAWN: " ++ show piece) $
+                                               ""
+                   | otherwise = trace ("Locking: " ++ show pos ++ ": " ++ reverse sol) $
+-                                reverse sol ++ playSeed board' rest
+-                  where (pos, rot, sol, _) = findBest words board piece
++                                reverse sol ++ playSeed ([], w, q) board' rest
++                  where (pos, rot, sol, (_, w, q)) = findBest power words board piece
+                         board' = trace ("Realized: " ++ show realized) $
+                                  fill realized board
+                         realized = realize $ Piece unit pos rot
+diff --git a/Unit.hs b/Unit.hs
+index 76f1612..812ebdb 100644
+--- a/Unit.hs
++++ b/Unit.hs
+@@ -57,7 +57,7 @@ instance Show Unit where
+            ++ show' False (range (Pos 0 0, extent))
+     where width = 1 + posX extent
+           show' _ [] = ""
+-          show' offset ps = (if offset then (' ':) else id) $ row ps $
++          show' offset ps = (if offset then {- (' ':) -} id else id) $ row ps $
+                             show' (not offset) (drop width ps)
+           row [] _ = ""
+           row ps rest = '|':row' (take width ps) rest
+diff --git a/words b/words
+index 76907d6..28cb135 100644
+--- a/words
++++ b/words
+@@ -2,3 +2,4 @@ ei!
+ ia! ia!
+ r'lyeh
+ yuggoth
++ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn.
+
