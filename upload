@@ -1,0 +1,3 @@
+#!/bin/sh
+
+curl --user :xpjucYvS2nEAjnlhHLNAjO32W8TS5s0VhBCPQUOoWvU= -X POST -H "Content-Type: application/json" -T $1 https://davar.icfpcontest.org/teams/232/solutions
