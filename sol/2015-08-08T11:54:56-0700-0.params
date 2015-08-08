@@ -1,6 +1,7 @@
 Problems: problems/problem_0.json
 Words:    "ei!" "ia! ia!" "r'lyeh" "yuggoth"
 Args:     ./main -f problems/problem_0.json -p ei! -p ia! ia! -p r'lyeh -p yuggoth --tag sol/2015-08-08T11:54:56-0700-0
+Score:    0 - 4967
 Commit:   25d5a26e52fceb7d47cbd555c78640fd0f6c7886
 
 Stat:

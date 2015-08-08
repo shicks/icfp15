@@ -1,0 +1,9 @@
+Problems: problems/problem_0.json problems/problem_10.json problems/problem_11.json problems/problem_12.json problems/problem_13.json problems/problem_14.json problems/problem_15.json problems/problem_16.json problems/problem_17.json problems/problem_18.json problems/problem_19.json problems/problem_1.json problems/problem_20.json problems/problem_21.json problems/problem_22.json problems/problem_23.json problems/problem_2.json problems/problem_3.json problems/problem_4.json problems/problem_5.json problems/problem_6.json problems/problem_7.json problems/problem_8.json problems/problem_9.json
+Words:    "ei!" "ia! ia!" "r'lyeh" "yuggoth"
+Args:     ./main -f problems/problem_0.json -f problems/problem_10.json -f problems/problem_11.json -f problems/problem_12.json -f problems/problem_13.json -f problems/problem_14.json -f problems/problem_15.json -f problems/problem_16.json -f problems/problem_17.json -f problems/problem_18.json -f problems/problem_19.json -f problems/problem_1.json -f problems/problem_20.json -f problems/problem_21.json -f problems/problem_22.json -f problems/problem_23.json -f problems/problem_2.json -f problems/problem_3.json -f problems/problem_4.json -f problems/problem_5.json -f problems/problem_6.json -f problems/problem_7.json -f problems/problem_8.json -f problems/problem_9.json -p ei! -p ia! ia! -p r'lyeh -p yuggoth --tag sol/2015-08-08T12:04:02-0700-0,10,11,12,13,14,15,16,17,18,19,1,20,21,22,23,2,3,4,5,6,7,8,9
+Commit:   04793ac1a48b2fea7fce8cbafdf6697108b88993
+
+Stat:
+
+===DIFF===
+
