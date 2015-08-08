@@ -19,7 +19,7 @@ data CDir = CW | CCW
 
 data Command = Move Dir | Rotate CDir
           deriving (Eq, Ord, Show)
-commands = [Move E, Move W, Move SE, Move SW, Rotate CW, Rotate CCW]
+commands = [Move SE, Move SW, Move E, Move W, Rotate CW, Rotate CCW]
 
 commandChars :: [Char]
 commandChars = map encode commands

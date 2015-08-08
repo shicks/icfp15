@@ -1,0 +1,58 @@
+#!/usr/bin/perl
+
+# Runs the given problem, writing the parameters/commit info
+# and the solution to the sol/ directory
+
+my @problems = ();
+my @power = ();
+my @args = ('./main');
+my @ids = ();
+my $use_power = 1;
+
+# problems
+while ($_ = shift) {
+  if ($_ eq '--nopower') { $use_power = 0; next; }
+  push @problems, $_;
+  push @args, "-f", $_;
+  s/[^0-9]//g;
+  push @ids, $_;
+}
+
+# phrases of power
+if ($use_power) {
+  open POWER, "words";
+  while ($_ = <POWER>) {
+    chomp $_;
+    s/#.*//;
+    next unless /\S/;
+    push @power, "\"$_\"";
+    push @args, "-p", $_;
+  }
+  close POWER;
+}
+
+# commit info
+my $hash = `git rev-parse HEAD`;
+my $diff_stat = `git diff --stat HEAD`;
+my $diff = `git diff HEAD`;
+
+my $out = "sol/" . `date -Iseconds`;
+chomp $out;
+if (@ids) { local ($") = ','; $out = "$out-@ids"; }
+push @args, "--tag", $out;
+
+open PARAMS, ">$out.params";
+print PARAMS <<EOF;
+Problems: @problems
+Words:    @power
+Args:     @args
+Commit:   $hash
+Stat:
+$diff_stat
+===DIFF===
+$diff
+EOF
+close PARAMS;
+
+system "make", "main";
+system('sh' => ('-c' => '"$@" | ' . "tee $out.json", '--', @args));

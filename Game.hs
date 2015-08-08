@@ -103,8 +103,9 @@ apply u c (p, r, s, w) | Just cc <- decode c = apply' cc
         apply' (Rotate CW) = (p, (r + 1) `mod` order u, c:s, w)
         apply' (Rotate CCW) = (p, (r - 1) `mod` order u, c:s, w)
 
+-- Note: we *don't* remove the final command, since it was needed to lock it
 undo :: Unit -> Spot -> Spot
-undo u (p, r, (c:s), w) | Just cc <- decode c = unapply cc
+undo u (p, r, s@(c:_), w) | Just cc <- decode c = unapply cc
                         | Nothing <- decode c = undefined -- should never happen
   where unapply (Move d) = (p %- displacement d, r, s, w)
         unapply (Rotate CW) = (p, (r - 1) `mod` order u, s, w)
@@ -183,7 +184,7 @@ playGame tag words (Problem id initialBoard units sources) = play sources
                 playPiece piece@(Piece unit _ _)
                   | not $ valid piece board = trace ("INVALID SPAWN: " ++ show piece) $
                                               ""
-                  | otherwise = trace ("Locking: " ++ show pos) $
+                  | otherwise = trace ("Locking: " ++ show pos ++ ": " ++ reverse sol) $
                                 reverse sol ++ playSeed board' rest
                   where (pos, rot, sol, _) = findBest words board piece
                         board' = trace ("Realized: " ++ show realized) $

@@ -26,6 +26,6 @@ parseArgs [] = return $ CLI [] 0 0 "" []
 parseArgs ("-f":f:rest) = (\c -> c { files = f:files c }) `fmap` parseArgs rest
 parseArgs ("-p":p:rest) = (\c -> c { power = p:power c }) `fmap` parseArgs rest
 parseArgs ("-t":t:rest) = (\c -> c { time = read t }) `fmap` parseArgs rest
-parseArgs ("-g":t:rest) = (\c -> c { tag = t }) `fmap` parseArgs rest
 parseArgs ("-m":m:rest) = (\c -> c { mem = read m }) `fmap` parseArgs rest
+parseArgs ("--tag":t:rest) = (\c -> c { tag = t }) `fmap` parseArgs rest
 parseArgs args = fail $ "Bad args: " ++ show args
