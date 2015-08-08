@@ -10,6 +10,7 @@
 #include <functional>
 #include <type_traits>
 #include <vector>
+#include <sstream>
 
 // an integer that's big enough
 typedef std::int64_t integer;
@@ -22,6 +23,10 @@ static constexpr integer max_board_height = integer(1) << 30;
 static constexpr std::uint32_t source_multiplier = 1103515245U;
 static constexpr std::uint32_t source_increment = 12345U;
 static constexpr std::uint32_t source_mask = 0xffffffffU;
+
+static constexpr integer row_completion_score = 100;
+
+static constexpr char solution_tag[] = "c++";
 
 inline constexpr std::uint32_t source_advance(std::uint32_t seed) {
   return ((seed * source_multiplier) + source_increment) & source_mask;
@@ -151,6 +156,8 @@ struct cell_position {
 
   inline void rotate_ccw(int count = 1) {
     count %= 6;
+    if (count < 0)
+      count += 6;
     // cubical coordinates
     std::array<integer, 3> cube(to_cubic());
     // rotate cube
@@ -193,6 +200,12 @@ struct cell_position {
         ++y;
         break;
     }
+  }
+
+  inline std::string to_string() const {
+    std::ostringstream oss;
+    oss << "(" << x << ", " << y << ")";
+    return oss.str();
   }
 
  private:
@@ -238,7 +251,7 @@ struct unit_transform {
   cell_position offset;
   integer ccw_rotation;
 
-  inline bool operator==(const unit_transform &that) {
+  inline bool operator==(const unit_transform &that) const {
     BOOST_ASSERT(0 <= ccw_rotation);
     BOOST_ASSERT(ccw_rotation < 6);
     BOOST_ASSERT(0 <= that.ccw_rotation);
@@ -246,7 +259,7 @@ struct unit_transform {
     return offset == that.offset && ccw_rotation == that.ccw_rotation;
   }
 
-  inline bool operator!=(const unit_transform &that) {
+  inline bool operator!=(const unit_transform &that) const {
     BOOST_ASSERT(0 <= ccw_rotation);
     BOOST_ASSERT(ccw_rotation < 6);
     BOOST_ASSERT(0 <= that.ccw_rotation);
@@ -255,6 +268,7 @@ struct unit_transform {
   }
 
   inline void apply_move(unit_move m) {
+    BOOST_ASSERT(0 <= ccw_rotation && ccw_rotation < 6);
     switch (m) {
       case unit_move::e:
           offset.step(direction::e);
@@ -269,17 +283,20 @@ struct unit_transform {
           offset.step(direction::sw);
         break;
       case unit_move::ccw:
-        ++ccw_rotation;
-        ccw_rotation %= 6;
+        if (ccw_rotation == 5)
+          ccw_rotation = 0;
+        else
+          ++ccw_rotation;
         break;
       case unit_move::cw:
-        --ccw_rotation;
-        ccw_rotation %= 6;
+        if (ccw_rotation == 0)
+          ccw_rotation = 5;
+        else
+          --ccw_rotation;
         break;
       default:
         BOOST_ASSERT(false);
     }
-    BOOST_ASSERT(0 <= ccw_rotation && ccw_rotation < 6);
   }
 };
 
@@ -366,12 +383,29 @@ struct unit {
     return {x, y};
   }
 
+  std::string to_string() const {
+    std::ostringstream oss;
+    oss << "[";
+    bool first(true);
+    for (const auto &member : members) {
+      if (!first) {
+        oss << ", ";
+      }
+      first = false;
+      oss << "(" << member.x << ", " << member.y << ")";
+    }
+    oss << "]";
+    return oss.str();
+  }
+
   std::vector<cell_position> members;
 };
 
 struct path {
+  std::string text;
   std::vector<unit_move> moves;
   integer score;
+  unit_transform end;
 };
 
 namespace std {

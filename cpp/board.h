@@ -14,15 +14,25 @@ class board {
   board() : width_(0), height_(0), cells_(), num_set_(0) {}
 
   board(integer width, integer height)
-      : width_(width), height_(height), cells_(width * height) {}
+      : width_(width),
+        height_(height),
+        cells_(width * height),
+        num_set_(0),
+        row_occupancy_(height, 0) {}
 
   board(const board &that)
-      : width_(that.width_), height_(that.height_), cells_(that.cells_) {}
+      : width_(that.width_),
+        height_(that.height_),
+        cells_(that.cells_),
+        num_set_(that.num_set_),
+        row_occupancy_(that.row_occupancy_) {}
 
   board(board &&that)
       : width_(that.width_),
         height_(that.height_),
-        cells_(std::move(that.cells_)) {}
+        cells_(std::move(that.cells_)),
+        num_set_(that.num_set_),
+        row_occupancy_(std::move(that.row_occupancy_)) {}
 
   board(const problem_descriptor &problem)
       : board(problem.width, problem.height) {
@@ -32,6 +42,11 @@ class board {
   inline integer width() const { return width_; }
   inline integer height() const { return height_; }
 
+  inline integer row_occupancy(integer y) const {
+    BOOST_ASSERT(y < height_);
+    return row_occupancy_[y];
+  }
+
   inline void resize(integer width, integer height) {
     BOOST_ASSERT(width_ > 0);
     BOOST_ASSERT(width_ <= max_board_width);
@@ -40,6 +55,7 @@ class board {
     cells_.reset();
     cells_.resize(width_ * height_);
     num_set_ = 0;
+    row_occupancy_.assign(height, 0);
   }
 
   inline void clear() {
@@ -72,6 +88,7 @@ class board {
     auto n(cell.y * width_ + cell.x);
     if (!cells_.test(n)) {
       ++num_set_;
+      ++row_occupancy_[cell.y];
       cells_.set(n, val);
     }
   }
@@ -84,7 +101,15 @@ class board {
     auto n(cell.y * width_ + cell.x);
     if (cells_.test(n)) {
       --num_set_;
+      --row_occupancy_[cell.y];
       cells_.reset(n);
+    }
+  }
+
+  inline void reset_row(integer y) {
+    BOOST_ASSERT(y < height_);
+    for (integer x(0); x < width_; ++x) {
+      reset({x, y});
     }
   }
 
@@ -100,6 +125,20 @@ class board {
     return true;
   }
 
+  inline bool can_place_unit(const unit &unit, cell_position offset) const {
+    for (const auto &member : unit.members) {
+      cell_position xfrm_pos(member);
+      xfrm_pos += offset;
+      if (xfrm_pos.x < 0 || xfrm_pos.x >= width_)
+        return false;
+      if (xfrm_pos.y < 0 || xfrm_pos.y >= height_)
+        return false;
+      if (test(xfrm_pos))
+        return false;
+    }
+    return true;
+  }
+
   inline bool can_place_unit(const unit &unit, unit_transform xfrm) const {
     for (const auto &member : unit.members) {
       cell_position xfrm_pos(member);
@@ -109,7 +148,7 @@ class board {
         return false;
       if (xfrm_pos.y < 0 || xfrm_pos.y >= height_)
         return false;
-      if (test(member))
+      if (test(xfrm_pos))
         return false;
     }
     return true;
@@ -120,6 +159,18 @@ class board {
     for (auto member : unit.members) {
       set(member);
     }
+    clear_lines_();
+  }
+
+  void place_unit(const unit &unit, unit_transform xfrm) {
+    BOOST_ASSERT(can_place_unit(unit, xfrm));
+    for (auto member : unit.members) {
+      cell_position xfrm_pos(member);
+      xfrm_pos.rotate_ccw(xfrm.ccw_rotation);
+      xfrm_pos += xfrm.offset;
+      set(xfrm_pos);
+    }
+    clear_lines_();
   }
 
   std::string to_string();
@@ -132,9 +183,21 @@ class board {
   }
 
  private:
+  void clear_lines_() {
+    for (integer y(0); y < height_; ++y) {
+      if (row_occupancy_[y] == width_) {
+        for (integer x(0); x < width_; ++x) {
+          cells_.reset(y * width_ + x);
+        }
+        row_occupancy_[y] = 0;
+      }
+    }
+  }
+
   integer width_, height_;
   boost::dynamic_bitset<> cells_;
   integer num_set_;
+  std::vector<integer> row_occupancy_;
 };
 
 namespace std {

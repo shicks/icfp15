@@ -1,5 +1,6 @@
 #include "problem_descriptor.h"
 #include "board.h"
+#include "ai.h"
 
 #include <iostream>
 #include <vector>
@@ -65,6 +66,9 @@ int main(int argc, char *argv[]) {
     std::cout << "width: " << problem.width << ", height: " << problem.height
               << std::endl;
     std::cout << b.to_string() << std::endl;
+    ai solver(problem);
+    auto solutions(solver.find_solutions());
+    (void) solutions;
   }
 
   return 0;

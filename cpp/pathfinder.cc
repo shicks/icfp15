@@ -9,65 +9,178 @@ namespace {
 struct frontier_queue_entry {
   unit_transform xfrm;
   integer start_distance;
-  integer score;
+  integer path_score;
 
   bool operator<(const frontier_queue_entry &that) const {
-    return score > that.score;
+    return path_score < that.path_score;
   }
 };
 typedef std::priority_queue<frontier_queue_entry> frontier_queue_type;
 }
 
+integer pathfinder::get_move_base_score(const unit_transform &xfrm,
+                                        unit_move move,
+                                        char *letter) {
+  // todo
+  BOOST_ASSERT(letter != nullptr);
+  switch (move) {
+    case unit_move::e:
+      *letter = 'b';
+      break;
+    case unit_move::w:
+      *letter = 'p';
+      break;
+    case unit_move::se:
+      *letter = 'l';
+      break;
+    case unit_move::sw:
+      *letter = 'a';
+      break;
+    case unit_move::cw:
+      *letter = 'd';
+      break;
+    case unit_move::ccw:
+      *letter = 'k';
+      break;
+    default:
+      BOOST_ASSERT(false);
+  }
+  return 0;
+}
+
+integer pathfinder::get_move_path_score(const unit_transform &xfrm,
+                                        unit_move move,
+                                        const unit_transform &new_xfrm,
+                                        const path_cache_type &cache) {
+  integer ret(0);
+  switch (move) {
+    case unit_move::se:
+    case unit_move::sw:
+      ret += new_xfrm.offset.y;
+      break;
+    default:
+      break;
+  }
+  return ret;
+}
+
+integer pathfinder::get_cell_locking_score(const unit_transform &xfrm) {
+  integer ret(0);
+  integer new_row_occupancy[board_->height()];
+  unit *rotated_unit(&ccw_rotated_unit_[xfrm.ccw_rotation]);
+  BOOST_ASSERT(board_->can_place_unit(*rotated_unit, xfrm.offset));
+
+  for (integer y(0); y < board_->height(); ++y) {
+    new_row_occupancy[y] = board_->row_occupancy(y);
+  }
+  // for each member, add points for the number of cells already in the row
+  // also add points for completed rows
+  for (const auto &member : rotated_unit->members) {
+    integer y(member.y + xfrm.offset.y);
+    ret += new_row_occupancy[y];
+    ++new_row_occupancy[y];
+    if (new_row_occupancy[y] == board_->width()) {
+      ret += row_completion_score * (board_->height() - y);
+    }
+  }
+  return ret;
+}
+
 // something like A*, but maximizes a score instead of minimizing distance
 path pathfinder::find_best_path(unit_transform start_xfrm) {
   if (!board_->can_place_unit(*unit_, start_xfrm)) {
-    return path{{}, -1};
+    return path{"", {}, -1};
   }
 
   board closed[6];
   frontier_queue_type frontier_queue;
   frontier_queue.push(frontier_queue_entry{start_xfrm, 0, 0});
-  cache_type cache{
-      {start_xfrm, cell_state{start_xfrm, 0, 0}},
+  path_cache_type path_cache{
+      {start_xfrm, path_cache_entry{start_xfrm, 0, 0}},
   };
+  locking_cache_type locking_cache;
 
-  integer best_score(0);
-  unit_transform best_xfrm(start_xfrm);
+  bool have_best_score(false);
+  unit_transform best_xfrm;
+  integer best_score;
 
   while (!frontier_queue.empty()) {
     auto current(frontier_queue.top());
     frontier_queue.pop();
+    // std::cerr << "checking cell " << current.xfrm.offset.to_string()
+    //           << " rotation " << current.xfrm.ccw_rotation << " path score "
+    //           << current.path_score << std::endl;
     BOOST_ASSERT(0 <= current.xfrm.ccw_rotation);
     BOOST_ASSERT(current.xfrm.ccw_rotation < 6);
-    auto current_cache_iter(cache.find(current.xfrm));
-    BOOST_ASSERT(current_cache_iter != cache.end());
-    auto current_cache(current_cache_iter->second);
+    auto current_path_cache_iter(path_cache.find(current.xfrm));
+    BOOST_ASSERT(current_path_cache_iter != path_cache.end());
+    auto current_path_cache_entry(current_path_cache_iter->second);
 
     unit_move m(unit_move::first);
     while (true) {
-      
       unit_transform new_xfrm(current.xfrm);
       new_xfrm.apply_move(m);
 
-      if (board_.can_place_unit(unit_, new_xfrm)) {
-        auto new_score(current.score +
-                       score_move(current.xfrm, m, new_xfrm, cache));
-        cell_state new_state{
-            new_xfrm, current.start_distance + 1, new_score, m};
-        auto p(cache.emplace(new_xfrm, new_state));
+      unit *rotated_unit(&ccw_rotated_unit_[new_xfrm.ccw_rotation]);
+      char letter;
+      integer new_base_score(get_move_base_score(current.xfrm, m, &letter));
+      if (board_->can_place_unit(*rotated_unit, new_xfrm.offset)) {
+        auto new_path_score(
+            current.path_score + new_base_score +
+            get_move_path_score(
+                current.xfrm, m, new_xfrm, path_cache));
+        path_cache_entry new_path_cache_entry{
+            current.xfrm, current.start_distance + 1, new_path_score, m, letter};
+        auto p(path_cache.emplace(new_xfrm, new_path_cache_entry));
         bool visit(false);
         if (p.second) {
+          // std::cerr << "added new path with score " << p.first->second.path_score << " to "
+          //           << p.first->first.offset.to_string() << " rotation "
+          //           << p.first->first.ccw_rotation << " from "
+          //           << current.xfrm.offset.to_string() << " rotation "
+          //           << current.xfrm.ccw_rotation << std::endl;
           visit = true;
         } else {
-          if (new_state.score > p.first->second.score) {
-            if (!find_cycle(current.xfrm, new_xfrm, cache)) {
-              p.first->second = new_state;
+          if (new_path_score > p.first->second.path_score) {
+            if (!find_cycle(current.xfrm, new_xfrm, path_cache)) {
+              // std::cerr << "overwriting old path with score "
+              //           << p.first->second.path_score << " to "
+              //           << new_xfrm.offset.to_string() << " rotation "
+              //           << new_xfrm.ccw_rotation << " to new score "
+              //           << new_path_score << " from "
+              //           << current.xfrm.offset.to_string() << " rotation "
+              //           << current.xfrm.ccw_rotation << std::endl;
+              p.first->second = new_path_cache_entry;
               visit = true;
             }
           }
         }
         if (visit) {
-          frontier_queue.push(frontier_queue_entry{start_xfrm, 0, 0});
+          // std::cerr << "queuing " << new_xfrm.offset.to_string() << " rotation "
+          //           << new_xfrm.ccw_rotation << std::endl;
+          frontier_queue.push(frontier_queue_entry{
+              new_xfrm, current.start_distance + 1, new_path_score});
+        }
+      } else {
+        auto locking_cache_iter(locking_cache.find(current.xfrm));
+        integer new_locking_score(new_base_score + get_cell_locking_score(current.xfrm));
+        if (locking_cache_iter == locking_cache.end()) {
+          locking_cache_iter =
+              locking_cache.emplace(current.xfrm,
+                                    locking_cache_entry{m, new_locking_score, letter})
+                  .first;
+        } else {
+          if (new_locking_score > locking_cache_iter->second.locking_score) {
+            locking_cache_iter->second.locking_score = new_locking_score;
+            locking_cache_iter->second.locking_letter = letter;
+          }
+        }
+        integer new_score(current_path_cache_entry.path_score +
+                          locking_cache_iter->second.locking_score);
+        if (!have_best_score || new_score > best_score) {
+          best_score = new_score;
+          best_xfrm = current.xfrm;
+          have_best_score = true;
         }
       }
       if (m == unit_move::last) {
@@ -76,9 +189,34 @@ path pathfinder::find_best_path(unit_transform start_xfrm) {
       m = static_cast<unit_move>(static_cast<char>(m) + 1);
     }
   }
+  BOOST_ASSERT(have_best_score);
+
+  std::cerr << "best ending location: " << best_xfrm.offset.to_string()
+            << " rotation " << best_xfrm.ccw_rotation << " score " << best_score
+            << std::endl;
 
   path ret;
-  auto path_cache_iter(cache.find(best_score
+  auto path_cache_iter(path_cache.find(best_xfrm));
+  auto locking_cache_iter(locking_cache.find(best_xfrm));
+ 
+  BOOST_ASSERT(path_cache_iter != path_cache.end());
+  BOOST_ASSERT(locking_cache_iter != locking_cache.end());
+  ret.score = path_cache_iter->second.path_score + locking_cache_iter->second.locking_score;
+  ret.moves.emplace_back(locking_cache_iter->second.locking_move);
+  ret.text.push_back(locking_cache_iter->second.locking_letter);
+  while (path_cache_iter->second.start_distance > 0) {
+    ret.moves.emplace_back(path_cache_iter->second.last_move);
+    ret.text.push_back(path_cache_iter->second.last_letter);
+    std::cerr << "tracing back to "
+              << path_cache_iter->second.previous_xfrm.offset.to_string()
+              << " rotation " << path_cache_iter->second.previous_xfrm.ccw_rotation
+              << std::endl;
+    path_cache_iter = path_cache.find(path_cache_iter->second.previous_xfrm);
+    BOOST_ASSERT(path_cache_iter != path_cache.end());
+  }
+  std::reverse(ret.moves.begin(), ret.moves.end());
+  std::reverse(ret.text.begin(), ret.text.end());
+  ret.end = best_xfrm;
 
   return ret;
 }

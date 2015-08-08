@@ -8,13 +8,23 @@
 #include <unordered_map>
 
 class pathfinder {
-  struct cell_state {
+  // state for cells we can move into
+  struct path_cache_entry {
     unit_transform previous_xfrm;
     integer start_distance;
-    integer score;
+    integer path_score;
     unit_move last_move;
+    char last_letter;
   };
-  typedef std::unordered_map<unit_transform, cell_state> cache_type;
+  typedef std::unordered_map<unit_transform, path_cache_entry> path_cache_type;
+
+  // state for cells we can lock into
+  struct locking_cache_entry {
+    unit_move locking_move;
+    integer locking_score;
+    char locking_letter;
+  };
+  typedef std::unordered_map<unit_transform, locking_cache_entry> locking_cache_type;
 
  public:
   inline pathfinder(const board *new_board, const unit *new_unit)
@@ -44,23 +54,25 @@ class pathfinder {
   path find_best_path(unit_transform start_xfrm);
 
  private:
-  integer score_move(const unit_transform &xfrm,
-                     unit_move move,
-                     const unit_transform &new_xfrm,
-                     const cache_type &cache);
+  integer get_move_base_score(const unit_transform &xfrm,
+                              unit_move math,
+                              char *letter);
+  integer get_move_path_score(const unit_transform &xfrm,
+                              unit_move move,
+                              const unit_transform &new_xfrm,
+                              const path_cache_type &cache);
+  integer get_cell_locking_score(const unit_transform &xfrm);
+
   // find new_xfrm in predecessors of xfrm
   inline bool find_cycle(unit_transform xfrm,
                          const unit_transform &new_xfrm,
-                         const cache_type &cache) {
+                         const path_cache_type &cache) {
     while (true) {
       auto cache_iter(cache.find(xfrm));
       BOOST_ASSERT(cache_iter != cache.end());
       const auto &cell_state(cache_iter->second);
       if (cell_state.start_distance == 0)
         return false; // this is the start point
-      if (move == unit_move::sw ||
-          move == unit_move::se)
-        return false;
       xfrm = cell_state.previous_xfrm;
       if (xfrm == new_xfrm)
         return true;

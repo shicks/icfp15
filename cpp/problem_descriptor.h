@@ -41,4 +41,14 @@ struct problem_descriptor {
   std::vector<std::uint32_t> source_seeds;
 };
 
+struct problem_solution {
+  integer id;
+  std::uint32_t seed;
+  std::string tag;
+  std::string solution;
+
+  void to_json_value(Json::Value *value);
+  std::string to_string();
+};
+
 #endif
