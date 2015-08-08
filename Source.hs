@@ -9,6 +9,7 @@ import Data.Ix ( range )
 
 data Source = Source { seed :: Int
                      , size :: Int }
+              deriving ( Show )
 
 runSource :: Source -> [Int]
 runSource (Source seed 0) = []

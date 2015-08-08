@@ -16,10 +16,12 @@ data Unit = Unit { members :: [Pos]
                  , extent :: Pos
                  , shapeBounds :: (Pos, Pos)
                  , order :: Int
+                 , neighbors :: [Pos]  -- relative to the pivot
+                 , com :: Pos  -- center of mass relative to pivot
                  }
 
 unit :: [Pos] -> Pos -> Unit
-unit ms p = Unit (map shift ms) (shift p) extent bounds (findOrder ms p)
+unit ms p = Unit (map shift ms) (shift p) extent bounds (findOrder ms p) ns com
   where xs = map posX $ ms
         ys = map posY $ ms
         px = posX p
@@ -32,10 +34,17 @@ unit ms p = Unit (map shift ms) (shift p) extent bounds (findOrder ms p)
         shift (Pos x y) = Pos (x - min minX px) (y - min minY py)
         extent = shift $ Pos (max maxX px) (max maxY py)
         bounds = (shift $ Pos minX minY, shift $ Pos maxX maxY)
+        ns = map (%-p) $ S.elems $ (S.\\) ns' (S.fromList ms)
+        ns' = S.fromList $ concatMap around ms
+        -- Note: this isn't technically center of mass, it's just the
+        -- center of the bounds, but it's generally a good approximation
+        com = Pos ((maxX + minX) `div` 2) ((maxY + minY) `div` 2) %- p
+        
 
 instance Show Unit where
-  show (Unit members pivot extent _ o) = "Order " ++ show o ++ "\n"
-                                         ++ show' False (range (Pos 0 0, extent))
+  show (Unit members pivot extent _ o ns _ )
+         = "Order " ++ show o ++ ", " ++ show (length ns) ++ " neighbors\n"
+           ++ show' False (range (Pos 0 0, extent))
     where width = 1 + posX extent
           show' _ [] = ""
           show' offset ps = (if offset then (' ':) else id) $ row ps $
@@ -63,14 +72,3 @@ findOrder ps piv = order' (r s) 1
         order' :: S.Set Pos -> Int -> Int
         order' s' n | s' == s = n
                     | otherwise = order' (r s') (n + 1)
-
--- *Expands a unit to all the positions its members will occupy
-realize :: Unit   -- ^Unit to realize
-        -> Pos    -- ^Position of the pivot
-        -> Int    -- ^Rotation (0..5)
-        -> [Pos]
-realize u pos r = map (offset . rot . center) $ members u
-  where center = (%- (pivot u))
-        offset = (%+ pos)
-        rot = rotate r
-

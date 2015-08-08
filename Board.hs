@@ -4,6 +4,8 @@ module Board where
 
 import Pos
 
+import Debug.Trace
+
 import Control.Applicative ( (<$>), (<*>) )
 import Data.Aeson ((.:), (.:?), decode, FromJSON(..), Value(..))
 import Data.Array ( Array,
@@ -23,7 +25,7 @@ empty width height = Board $ array (start, end) elems
         elems = map (,False) $ range (start, end)
 
 instance Show Board where
-  show (Board c) = show' False $ map snd $ assocs c  -- for some reason, elems omits stuff
+  show (Board c) = show' False $ map snd $ assocs c  -- for some reason, elems omits stuff?!?
     where width = 1 + (posX $ snd $ bounds c)
           show' _ [] = ""
           show' offset cs = (if offset then (' ':) else id) $ row cs $
@@ -35,8 +37,33 @@ instance Show Board where
             where s = if c then '*' else ' '
                   space = if null cs then id else (' ':)
 
+type YMap = Int -> Maybe Int
+
 fill :: [Pos] -> Board -> Board
-fill ps (Board cs) = Board $ accum (const id) cs $ map (\p -> (p, True)) ps
+fill ps (Board cs) = clearLines ys $
+                     Board $ accum (const id) cs $ map (\p -> (p, True)) ps
+  where ys = uniq $ map posY ps
+        uniq (x:y:xs) | x == y = uniq (x:xs)
+        uniq (x:xs) = x:uniq xs
+        uniq [] = []
+
+clearLines :: [Int] -> Board -> Board
+clearLines ys b@(Board cs) = clear $ filter full ys
+  where clear [] = b
+        clear ls = trace ("Clearing " ++ show ls) $
+                   Board $ listArray bs $
+                   replicate (length ls * width) False ++ (clear' ls 0 $ elems cs)
+        clear' [] _ cs = cs
+        clear' (l:ls) y cs | y == l = clear' ls (y+1) rest
+                           | otherwise = take width cs ++ clear' (l:ls) (y+1) rest
+          where rest = drop width cs
+        full :: Int -> Bool
+        full y = all (cs!) $ map (\x -> Pos x y) [0..maxX]
+        bs = bounds cs
+        maxX = posX $ snd bs
+        maxY = posY $ snd bs
+        width = maxX + 1
+
 
 instance FromJSON Board where
   parseJSON (Object v) = board <$> (v .: "width") <*> (v .: "height") <*> (v .: "filled")

@@ -1,8 +1,12 @@
 module Main where
 
+import Control.Monad ( mapM )
+import Data.Aeson ( encode )
+import qualified Data.ByteString.Lazy.Char8 as B
 import System.Environment ( getArgs )
 
-import Board
+import Game
+import Problem
 
 data CLI = CLI { files :: [String]
                , time  :: Int
@@ -10,13 +14,11 @@ data CLI = CLI { files :: [String]
                , power :: [String] }
 
 main :: IO ()
-main = do
-  args <- getArgs
-  cli <- parseArgs args
-  forM_ (files cli) $ \f -> do
-    b <- readBoard f
-    putStrLn $ "File " ++ f
-    print b
+main = do args <- getArgs
+          cli <- parseArgs args
+          outs <- mapM solve $ files cli
+          B.putStrLn $ encode $ concat outs
+  where solve file = playGame `fmap` readProblem file
 
 parseArgs :: [String] -> IO CLI
 parseArgs [] = return $ CLI [] 0 0 []
