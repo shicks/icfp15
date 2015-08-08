@@ -8,6 +8,7 @@ module Pos ( Pos(..), Dir(..), CDir(..), Command(..)
            ) where
 
 import Control.Applicative ( (<$>), (<*>) )
+import Control.Arrow ( first )
 import Data.Aeson ((.:), FromJSON(..), Value(..))
 import Data.Ix ( Ix(..) )
 
@@ -83,10 +84,16 @@ instance FromJSON Pos where
   parseJSON (Object v) = Pos <$> (v .: "x") <*> (v .: "y")
   parseJSON v = fail $ "Bad Pos: " ++ show v
 
-around :: Pos -> [Pos]
-around p = map (%+p) dirs
-  where dirs :: [Pos]
-        dirs = [Pos 1 0, Pos 0 1, Pos (-1) 1, Pos (-1) 0, Pos (-1) (-1), Pos 0 (-1)]
+around :: Pos -> [(Pos, Int)]
+around p = map (first (%+p)) dirs
+  where dirs :: [(Pos, Int)]
+        dirs = [ (Pos 1 0, 2)
+               , (Pos 0 1, 5)
+               , (Pos (-1) 1, 5)
+               , (Pos (-1) 0, 2)
+               , (Pos (-1) (-1), 1)
+               , (Pos 0 (-1), 1)
+               ]
 
 displacement :: Dir -> Pos
 displacement E = Pos 1 0
