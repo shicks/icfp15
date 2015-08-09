@@ -3,12 +3,14 @@
 # Runs the given problem, writing the parameters/commit info
 # and the solution to the sol/ directory
 
+use strict;
+
 my @args = ('./score');
 my @outputs = ();
-my $verbose = 1;
+my $verbose = 0;
 
 while ($_ = shift) {
-  if ($_ eq '--quiet') { $verbose = 0; next; }
+  if ($_ eq '--verbose') { $verbose = 1; next; }
   if (-e $_) { push @outputs, $_; next; }
   # error?
 }
@@ -28,16 +30,14 @@ while ($_ = readdir PROBS) {
 closedir PROBS;
 
 # phrases of power
-if ($use_power) {
-  open POWER, "words";
-  while ($_ = <POWER>) {
-    chomp $_;
-    s/#.*//;
-    next unless /\S/;
-    push @args, "-p", $_;
-  }
-  close POWER;
+open POWER, "words";
+while ($_ = <POWER>) {
+  chomp $_;
+  s/#.*//;
+  next unless /\S/;
+  push @args, "-p", $_;
 }
+close POWER;
 
 push @args, '--verbose' if $verbose;
 

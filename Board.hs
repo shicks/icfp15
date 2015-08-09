@@ -33,7 +33,7 @@ instance Show Board where
           row cs rest = '|':row' (take width cs) rest
           row' [] rest = '|':'\n':rest
           row' (c:cs) rest = s:space (row' cs rest)
-            where s = if c then '*' else '.'
+            where s = if c then '✹' else '·'
                   space = if null cs then id else (' ':)
 
 type YMap = Int -> Maybe Int

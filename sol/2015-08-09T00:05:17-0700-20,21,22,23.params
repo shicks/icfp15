@@ -1,0 +1,27 @@
+Problems: problems/problem_20.json problems/problem_21.json problems/problem_22.json problems/problem_23.json
+Words:    "ei!" "ia! ia!" "r'lyeh" "yuggoth" "ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn."
+Args:     ./main -f problems/problem_20.json -f problems/problem_21.json -f problems/problem_22.json -f problems/problem_23.json -p ei! -p ia! ia! -p r'lyeh -p yuggoth -p ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn. --verbose --tag sol/2015-08-09T00:05:17-0700-20,21,22,23
+Commit:   e7f73c72dca6f6a2c28799a5142c28f14da7f597
+
+Stat:
+ sol/scores | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+===DIFF===
+diff --git a/sol/scores b/sol/scores
+index d36efb6..ecc3ad0 100644
+--- a/sol/scores
++++ b/sol/scores
+@@ -25,3 +25,11 @@ Haskell:
+ 22: 5700  / 5th
+ 23: 490   / 34th
+ 24: 167908 / 1st
++
++
++CPP
++
++13: 187 / 41st
++17: 1400 / 24th
++21: 620 / 26th
++
+

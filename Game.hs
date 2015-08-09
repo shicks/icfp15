@@ -228,8 +228,11 @@ runGame words ps (Output pid seed _ sol) = runProblem $ head $ filter (\(Problem
                             then -- trace (show board') $
                                  run' score'' ls words_used' cs prev_cs' board' piece'' (tail next) S.empty
                             else ("board full", score'' + words_bonus)
-          where score' = score + new_words_score
-                score'' = score' + points + line_bonus
+          where score' = (if new_words_score > 0 then trace ("scoring word " ++ show new_words_score) else \x->x) $
+                         score + new_words_score
+                score'' = trace ("scoring piece " ++ show points ++
+                                 (if line_bonus > 0 then "\nline bonus " ++ show line_bonus else "")) $
+                          score' + points + line_bonus
                 points = length (members u) + line_score
                 line_score = 100 * (1 + ls) * ls `div` 2
                 line_bonus = if ls_old > 1
@@ -247,7 +250,8 @@ runGame words ps (Output pid seed _ sol) = runProblem $ head $ filter (\(Problem
                 prev_cs' = c:prev_cs
                 new_words = filter (`isPrefixOf`prev_cs') reversed
                 new_words_score = sum $ map ((2*) . length) $ new_words
-                words_bonus = 300 * S.size words_used
+                words_bonus = trace ("words bonus: " ++ show (300 * S.size words_used)) $
+                              300 * S.size words_used
                 -- the following are copied from other places
                 cellsList = realize piece
                 cellsSet = S.fromList cellsList

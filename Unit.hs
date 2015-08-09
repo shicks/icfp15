@@ -65,7 +65,7 @@ instance Show Unit where
           row' (p:ps) rest = s:space (row' ps rest)
             where s = if p == pivot
                       then if p `elem` members then '@' else 'x'
-                      else if p `elem` members then 'O' else '.'
+                      else if p `elem` members then 'O' else '·'
                   space = if null ps then id else (' ':)
 
 instance FromJSON Unit where

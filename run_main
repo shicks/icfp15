@@ -65,5 +65,6 @@ system "make", "main";
 if ($save) {
   system('sh' => ('-c' => '"$@" | ' . "tee $out.json", '--', @args));
 } else {
+  push @args, "--score";
   system @args;
 }
