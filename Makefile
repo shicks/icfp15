@@ -7,4 +7,4 @@ showboard: $(SRCS) ShowBoard.hs
 	ghc -o showboard --make ShowBoard
 
 score: $(SRCS) Score.hs
-	ghc -o score --make Score
+	ghc -rtsopts -o score --make Score

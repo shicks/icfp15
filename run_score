@@ -5,7 +5,7 @@
 
 use strict;
 
-my @args = ('./score');
+my @args = ('./score', '+RTS', '-K32000000', '-RTS');
 my @outputs = ();
 my $verbose = 0;
 
