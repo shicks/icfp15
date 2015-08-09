@@ -8,8 +8,10 @@
 #include <chrono>
 #include <vector>
 
-ai::ai(problem_descriptor problem)
-    : problem_(std::move(problem)), board_(problem_.width, problem_.height) {
+ai::ai(problem_descriptor problem, std::string tag)
+    : problem_(std::move(problem)),
+      board_(problem_.width, problem_.height),
+      tag_(std::move(tag)) {
   for (const auto &unit_descr : problem_.units) {
     units_.emplace_back(unit::from_descriptor(unit_descr));
   }

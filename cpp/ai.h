@@ -7,7 +7,7 @@
 
 class ai {
  public:
-  ai(problem_descriptor problem);
+  ai(problem_descriptor problem, std::string tag);
   inline ~ai() = default;
 
   inline ai(const ai &that) = delete;
@@ -22,6 +22,7 @@ class ai {
   std::string do_unit(const unit &unit);
 
   problem_descriptor problem_;
+  std::string tag_;
   board board_;
   std::vector<unit> units_;
 };

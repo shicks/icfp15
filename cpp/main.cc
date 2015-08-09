@@ -28,6 +28,7 @@ int main(int argc, char *argv[]) {
   unsigned long timelimit(std::numeric_limits<unsigned long>::max());
   unsigned long max_memory(std::numeric_limits<unsigned long>::max());
   std::vector<std::string> phrases;
+  std::string tag;
 
   for (int argn(1); argn < argc; ++argn) {
     if (strcmp(argv[argn], "-f") == 0) {
@@ -46,6 +47,8 @@ int main(int argc, char *argv[]) {
       }
     } else if (strcmp(argv[argn], "-p") == 0) {
       phrases.emplace_back(get_argument("-p",argc, argv, &argn));
+    } else if (strcmp(argv[argn], "-i") == 0) {
+      tag = get_argument("-i",argc,argv,&argn);
     } else {
       std::cerr << "unexpected argument: " << argv[argn] << std::endl;
       std::exit(1);
@@ -66,7 +69,7 @@ int main(int argc, char *argv[]) {
     std::cout << "width: " << problem.width << ", height: " << problem.height
               << std::endl;
     std::cout << b.to_string() << std::endl;
-    ai solver(problem);
+    ai solver(problem, tag);
     auto solutions(solver.find_solutions());
     (void) solutions;
   }
