@@ -4,8 +4,13 @@
 #include <boost/assert.hpp>
 
 #include <queue>
+#include <unordered_set>
 
 namespace {
+constexpr integer row_fill_score = 100;
+constexpr integer cell_stacking_score = 10;
+constexpr integer move_down_score = 10;
+
 struct frontier_queue_entry {
   unit_transform xfrm;
   integer start_distance;
@@ -16,6 +21,32 @@ struct frontier_queue_entry {
   }
 };
 typedef std::priority_queue<frontier_queue_entry> frontier_queue_type;
+}
+
+pathfinder::pathfinder(const board *new_board, const unit *new_unit)
+    : board_(new_board),
+      unit_(new_unit),
+      start_xfrm_{new_unit->spawn_offset(board_->width()), 0},
+      ccw_rotated_unit_{
+          *new_unit, *new_unit, *new_unit, *new_unit, *new_unit, *new_unit},
+      ccw_rotated_unit_members_{},
+      symmetry_(6) {
+  BOOST_ASSERT(board_ != nullptr);
+  for (integer n(0); n < 6; ++n) {
+    ccw_rotated_unit_[n].rotate_ccw(n);
+    std::sort(ccw_rotated_unit_[n].members.begin(), ccw_rotated_unit_[n].members.end());
+    for (const auto &member : ccw_rotated_unit_[n].members) {
+      ccw_rotated_unit_members_[n].emplace(member);
+    }
+  }
+  // find symmetry, defaults to 6.  only need to try factors of 6
+  for (integer symmetry : {1, 2, 3}) {
+    if (ccw_rotated_unit_[0] == ccw_rotated_unit_[symmetry]) {
+      symmetry_ = symmetry;
+      break;
+    }
+  }
+  // std::cerr << "symmetry: " << symmetry_ << std::endl;
 }
 
 integer pathfinder::get_move_base_score(const unit_transform &xfrm,
@@ -56,7 +87,7 @@ integer pathfinder::get_move_path_score(const unit_transform &xfrm,
   switch (move) {
     case unit_move::se:
     case unit_move::sw:
-      ret += new_xfrm.offset.y;
+      ret += move_down_score * new_xfrm.offset.y;
       break;
     default:
       break;
@@ -67,20 +98,48 @@ integer pathfinder::get_move_path_score(const unit_transform &xfrm,
 integer pathfinder::get_cell_locking_score(const unit_transform &xfrm) {
   integer ret(0);
   integer new_row_occupancy[board_->height()];
-  unit *rotated_unit(&ccw_rotated_unit_[xfrm.ccw_rotation]);
-  BOOST_ASSERT(board_->can_place_unit(*rotated_unit, xfrm.offset));
+  unit xfrm_unit(ccw_rotated_unit_[xfrm.ccw_rotation]);
+  xfrm_unit.apply_offset(xfrm.offset);
+  BOOST_ASSERT(board_->can_place_unit(xfrm_unit));
 
+  // find completed rows
   for (integer y(0); y < board_->height(); ++y) {
     new_row_occupancy[y] = board_->row_occupancy(y);
   }
-  // for each member, add points for the number of cells already in the row
-  // also add points for completed rows
-  for (const auto &member : rotated_unit->members) {
-    integer y(member.y + xfrm.offset.y);
-    ret += new_row_occupancy[y];
-    ++new_row_occupancy[y];
+  for (const auto &member : xfrm_unit.members) {
+    BOOST_ASSERT(0 <= member.y && member.y < board_->height());
+    ret += row_fill_score * new_row_occupancy[member.y] *
+           new_row_occupancy[member.y];
+    ++new_row_occupancy[member.y];
+  }
+
+  // points for each row completed
+  integer rows_completed(0);
+  for (integer y(0); y < board_->height(); ++y) {
     if (new_row_occupancy[y] == board_->width()) {
-      ret += row_completion_score * (board_->height() - y);
+      // give a higher score to rows higher up
+      ++rows_completed;
+      ret += row_fill_score * board_->width() * board_->width() *
+             (board_->height() - y) / board_->height();
+    }
+  }
+
+  if (rows_completed == 0) {
+    for (const auto &member : xfrm_unit.members) {
+      cell_position sw(member);
+      sw.step(direction::sw);
+      if (sw.x < 0 || sw.x >= board_->width() || sw.y < 0 ||
+          sw.y >= board_->height() || board_->test(sw)) {
+        // std::cerr << "stacking " << member.to_string() << " on " << sw.to_string() << std::endl;
+        ret += cell_stacking_score;
+      }
+      cell_position se(member);
+      se.step(direction::se);
+      if (se.x < 0 || se.x >= board_->width() || se.y < 0 ||
+          se.y >= board_->height() || board_->test(se)) {
+        // std::cerr << "stacking " << member.to_string() << " on " << se.to_string() << std::endl;
+        ret += cell_stacking_score;
+      }
     }
   }
   return ret;
@@ -88,11 +147,10 @@ integer pathfinder::get_cell_locking_score(const unit_transform &xfrm) {
 
 // something like A*, but maximizes a score instead of minimizing distance
 path pathfinder::find_best_path(unit_transform start_xfrm) {
-  if (!board_->can_place_unit(*unit_, start_xfrm)) {
+  if (!board_->can_place_unit(*unit_, {start_xfrm.offset, start_xfrm.ccw_rotation % symmetry_})) {
     return path{"", {}, -1};
   }
 
-  board closed[6];
   frontier_queue_type frontier_queue;
   frontier_queue.push(frontier_queue_entry{start_xfrm, 0, 0});
   path_cache_type path_cache{
@@ -111,7 +169,7 @@ path pathfinder::find_best_path(unit_transform start_xfrm) {
     //           << " rotation " << current.xfrm.ccw_rotation << " path score "
     //           << current.path_score << std::endl;
     BOOST_ASSERT(0 <= current.xfrm.ccw_rotation);
-    BOOST_ASSERT(current.xfrm.ccw_rotation < 6);
+    BOOST_ASSERT(current.xfrm.ccw_rotation < symmetry_);
     auto current_path_cache_iter(path_cache.find(current.xfrm));
     BOOST_ASSERT(current_path_cache_iter != path_cache.end());
     auto current_path_cache_entry(current_path_cache_iter->second);
@@ -120,11 +178,12 @@ path pathfinder::find_best_path(unit_transform start_xfrm) {
     while (true) {
       unit_transform new_xfrm(current.xfrm);
       new_xfrm.apply_move(m);
+      new_xfrm.ccw_rotation %= symmetry_;
 
-      unit *rotated_unit(&ccw_rotated_unit_[new_xfrm.ccw_rotation]);
+      const unit &rotated_unit(ccw_rotated_unit_[new_xfrm.ccw_rotation]);
       char letter;
       integer new_base_score(get_move_base_score(current.xfrm, m, &letter));
-      if (board_->can_place_unit(*rotated_unit, new_xfrm.offset)) {
+      if (board_->can_place_unit(rotated_unit, new_xfrm.offset)) {
         auto new_path_score(
             current.path_score + new_base_score +
             get_move_path_score(
@@ -177,6 +236,9 @@ path pathfinder::find_best_path(unit_transform start_xfrm) {
         }
         integer new_score(current_path_cache_entry.path_score +
                           locking_cache_iter->second.locking_score);
+        // std::cerr << "potential locking point " << current.xfrm.offset.to_string()
+        //           << " rotation " << current.xfrm.ccw_rotation << " locking score "
+        //           << new_locking_score << " final score " << new_score << std::endl;
         if (!have_best_score || new_score > best_score) {
           best_score = new_score;
           best_xfrm = current.xfrm;
@@ -207,10 +269,6 @@ path pathfinder::find_best_path(unit_transform start_xfrm) {
   while (path_cache_iter->second.start_distance > 0) {
     ret.moves.emplace_back(path_cache_iter->second.last_move);
     ret.text.push_back(path_cache_iter->second.last_letter);
-    std::cerr << "tracing back to "
-              << path_cache_iter->second.previous_xfrm.offset.to_string()
-              << " rotation " << path_cache_iter->second.previous_xfrm.ccw_rotation
-              << std::endl;
     path_cache_iter = path_cache.find(path_cache_iter->second.previous_xfrm);
     BOOST_ASSERT(path_cache_iter != path_cache.end());
   }

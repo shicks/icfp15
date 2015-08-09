@@ -106,6 +106,12 @@ class board {
     }
   }
 
+  inline void reset() {
+    cells_.reset();
+    num_set_ = 0;
+    row_occupancy_.assign(height_, 0);
+  }
+
   inline void reset_row(integer y) {
     BOOST_ASSERT(y < height_);
     for (integer x(0); x < width_; ++x) {

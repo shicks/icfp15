@@ -6,6 +6,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
 class pathfinder {
   // state for cells we can move into
@@ -27,17 +28,7 @@ class pathfinder {
   typedef std::unordered_map<unit_transform, locking_cache_entry> locking_cache_type;
 
  public:
-  inline pathfinder(const board *new_board, const unit *new_unit)
-      : board_(new_board),
-        unit_(new_unit),
-        start_xfrm_{new_unit->spawn_offset(board_->width()), 0},
-        ccw_rotated_unit_{
-            *new_unit, *new_unit, *new_unit, *new_unit, *new_unit, *new_unit} {
-    BOOST_ASSERT(board_ != nullptr);
-    for (integer n(0); n < 6; ++n) {
-      ccw_rotated_unit_[n].rotate_ccw(n);
-    }
-  }
+  pathfinder(const board *new_board, const unit *new_unit);
   ~pathfinder() = default;
 
   pathfinder() = delete;
@@ -83,7 +74,9 @@ class pathfinder {
   const unit *unit_;
   unit_transform start_xfrm_;
   std::array<unit, 6> ccw_rotated_unit_;
+  std::array<std::unordered_set<cell_position>, 6> ccw_rotated_unit_members_;
   std::vector<std::string> power_;
+  integer symmetry_;
 };
 
 #endif

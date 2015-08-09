@@ -10,7 +10,6 @@
 
 ai::ai(problem_descriptor problem)
     : problem_(std::move(problem)), board_(problem_.width, problem_.height) {
-  board_.fill(problem_.filled);
   for (const auto &unit_descr : problem_.units) {
     units_.emplace_back(unit::from_descriptor(unit_descr));
   }
@@ -27,6 +26,8 @@ std::vector<problem_solution> ai::find_solutions() {
 
 problem_solution ai::find_solution(std::uint32_t seed) {
   std::cerr << "finding solution for seed " << seed << std::endl;
+  board_.reset();
+  board_.fill(problem_.filled);
   problem_solution sol;
   std::string solution_text;
 
