@@ -5,6 +5,7 @@ import Data.Aeson ( encode )
 import qualified Data.ByteString.Lazy.Char8 as B
 import System.Environment ( getArgs )
 
+import Debug
 import Game
 import Problem hiding ( tag )
 
@@ -28,4 +29,6 @@ parseArgs ("-p":p:rest) = (\c -> c { power = p:power c }) `fmap` parseArgs rest
 parseArgs ("-t":t:rest) = (\c -> c { time = read t }) `fmap` parseArgs rest
 parseArgs ("-m":m:rest) = (\c -> c { mem = read m }) `fmap` parseArgs rest
 parseArgs ("--tag":t:rest) = (\c -> c { tag = t }) `fmap` parseArgs rest
+parseArgs ("--verbose":rest) = setVerbose True >> parseArgs rest
 parseArgs args = fail $ "Bad args: " ++ show args
+                 

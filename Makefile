@@ -1,4 +1,4 @@
-SRCS=Board.hs Game.hs Pos.hs Problem.hs Source.hs Unit.hs
+SRCS=Board.hs Debug.hs Game.hs Pos.hs Problem.hs Source.hs Unit.hs
 
 showboard: $(SRCS) ShowBoard.hs
 	ghc -o showboard --make ShowBoard

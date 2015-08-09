@@ -8,10 +8,14 @@ my @power = ();
 my @args = ('./main');
 my @ids = ();
 my $use_power = 1;
+my $save = 1;
+my $verbose = 1;
 
 # problems
 while ($_ = shift) {
   if ($_ eq '--nopower') { $use_power = 0; next; }
+  if ($_ eq '--nosave') { $save = 0; next; }
+  if ($_ eq '--quiet') { $verbose = 0; next; }
   push @problems, $_;
   push @args, "-f", $_;
   s/[^0-9]//g;
@@ -31,6 +35,8 @@ if ($use_power) {
   close POWER;
 }
 
+push @args, '--verbose' if $verbose;
+
 # commit info
 my $hash = `git rev-parse HEAD`;
 my $diff_stat = `git diff --stat HEAD`;
@@ -41,7 +47,7 @@ chomp $out;
 if (@ids) { local ($") = ','; $out = "$out-@ids"; }
 push @args, "--tag", $out;
 
-open PARAMS, ">$out.params";
+open PARAMS, $save ? ">$out.params" : ">/dev/stdout";
 print PARAMS <<EOF;
 Problems: @problems
 Words:    @power
@@ -55,4 +61,8 @@ EOF
 close PARAMS;
 
 system "make", "main";
-system('sh' => ('-c' => '"$@" | ' . "tee $out.json", '--', @args));
+if ($save) {
+  system('sh' => ('-c' => '"$@" | ' . "tee $out.json", '--', @args));
+} else {
+  system @args;
+}

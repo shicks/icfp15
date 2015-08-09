@@ -3,9 +3,10 @@
 module Game where
 
 import Board
+import Debug
 import Pos
-import Unit
 import Problem
+import Unit
 import Source
 
 import Control.Applicative ( (<$>), (<*>) )
@@ -18,9 +19,6 @@ import Data.Ix ( inRange, range )
 import Data.List ( maximumBy, sort )
 import Data.Ord ( comparing )
 import qualified Data.Set as S
-
-import Debug.Trace
--- trace _ x = x
 
 data Piece = Piece Unit Pos Int  -- unit, position, rotation
            deriving ( Show )
@@ -60,8 +58,11 @@ realize (Piece u pos r) = map (offset . rot . center) $ members u
 realizeNeighbors :: S.Set Pos -> [(Pos, Int)]
 realizeNeighbors ms = filter (not . (`S.member` ms) . fst) $ concatMap around $ S.toList ms
 
-realizeHeight :: Piece -> Int
-realizeHeight (Piece u pos r) = posY pos + posY (rotate r $ com u %- pivot u)
+realizeCoM :: Piece -> Pos
+realizeCoM (Piece u pos r) = pos %+ (rotate r $ com u %- pivot u)
+
+realizeHeight :: [Pos] -> Int
+realizeHeight ps = minimum $ map posY ps
 
 -- TODO(sdh): consider memoizing the row sizes to make bonus computation quicker
 score :: Int -> Piece -> Board -> Int
@@ -83,15 +84,18 @@ score ls_old piece board = points - gap_penalty + height_bonus + same_row_bonus
         -- TODO(sdh): consider weighting by # filled on the same line...
         gap_penalty = gap_factor * sum empty_neighbors
         empty_neighbors = map snd $ filter (emptyPos board . fst) $ realizeNeighbors cellsSet
-        height_bonus = height_factor * realizeHeight piece
+        height_bonus = height_factor * height
+        height = posY com
+        -- height = realizeHeight cellsList
+        com = realizeCoM piece
         width = boardWidth board
         maxX = width - 1
         gap_factor = 2
-        height_factor = 1
+        height_factor = 3
         same_row_factor = 3
         
 
--- This is more efficient than nub if duplicates are always together
+-- This is more efficient than nub if duplicates are always together (why does this assumption break?!?)
 uniq :: Eq a => [a] -> [a]
 uniq (x:y:xs) | x == y = uniq (x:xs)
 uniq (x:xs) = x:uniq xs
@@ -153,13 +157,10 @@ findBest initialPower wordList board (Piece unit p r) = search [(p, r, "", initi
         strip (p, r, _, _) = (p, r, "", ([], "", ""))
         findMax :: S.Set Spot -> Spot
         findMax = snd . maximumBy (comparing fst) .
-                  map (\s -> -- tr show $
-                             (powerScore s + score 0 (piece s) board, s)) .
+                  map (\s -> (powerScore s + score 0 (piece s) board, s)) .
                   S.toList
         -- Note: doesn't count power_bonus, since it's not a marginal gain
         powerScore (_, _, _, (power, _, _)) = sum $ map (\p -> length p) power
-
-tr f o = trace (f o) o
 
 -- used to pseudo-randomize which words we try to use
 rot :: Int -> [a] -> [a]

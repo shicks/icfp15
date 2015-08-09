@@ -2,9 +2,8 @@
 
 module Board where
 
+import Debug
 import Pos
-
-import Debug.Trace
 
 import Control.Applicative ( (<$>), (<*>) )
 import Data.Aeson ((.:), (.:?), decode, FromJSON(..), Value(..))
