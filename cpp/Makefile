@@ -20,6 +20,7 @@ LIBS = \
 PLAY_ICFP2015_SOURCES = \
 	board.cc \
 	problem_descriptor.cc \
+	pathfinder.cc \
 	ai.cc \
 	main.cc
 PLAY_ICFP2015_OBJECTS = $(PLAY_ICFP2015_SOURCES:%.cc=%.o)

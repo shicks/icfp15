@@ -80,9 +80,11 @@ bool unit_descriptor_from_json_value(const Json::Value &value,
        ++member_num) {
     unit->members.emplace_back();
     if (!cell_position_from_json_value(
-            members_value[member_num], width, height, &unit->members.back()))
+            (*members_value)[member_num], width, height, &unit->members.back()))
       return false;
   }
+  if (unit->members.empty())
+    return false;
 
   return true;
 }
@@ -115,7 +117,7 @@ bool problem_descriptor::from_json_value(const Json::Value &root_value) {
   const Json::Value *units_value(
       root_value.find(units_name, units_name + (sizeof units_name - 1)));
   if (!units_value || !units_value->isArray()) return false;
-  for (Json::ArrayIndex unit_num(0); unit_num < units.size(); ++unit_num) {
+  for (Json::ArrayIndex unit_num(0); unit_num < units_value->size(); ++unit_num) {
     units.emplace_back();
     if (!unit_descriptor_from_json_value(
             (*units_value)[unit_num], width, height, &units.back()))
@@ -157,5 +159,29 @@ bool problem_descriptor::from_json_value(const Json::Value &root_value) {
       return false;
   }
 
+  if (units.empty())
+    return false;
+  if (source_seeds.empty())
+    return false;
+
   return true;
+}
+
+static constexpr char problem_id_name[] = "problemId";
+static constexpr char seed_name[] = "seed";
+static constexpr char tag_name[] = "tag";
+static constexpr char solution_name[] = "solution";
+
+void problem_solution::to_json_value(Json::Value *value) {
+  (*value)[problem_id_name] = Json::LargestInt(id);
+  (*value)[seed_name] = Json::LargestUInt(seed);
+  (*value)[tag_name] = tag;
+  (*value)[solution_name] = solution;
+}
+
+std::string problem_solution::to_string() {
+  Json::Value value;
+  to_json_value(&value);
+  Json::StyledWriter writer;
+  return writer.write(value);
 }
