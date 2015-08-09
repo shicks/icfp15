@@ -8,3 +8,6 @@ showboard: $(SRCS) ShowBoard.hs
 
 score: $(SRCS) Score.hs
 	ghc -rtsopts -o score --make Score
+
+decode: $(SRCS) Decode.hs
+	ghc -o decode --make Decode

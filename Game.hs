@@ -227,7 +227,7 @@ runGame words ps (Output pid seed _ sol) = runProblem $ head $ filter (\(Problem
                        else if valid piece'' board
                             then -- trace (show board') $
                                  run' score'' ls words_used' cs prev_cs' board' piece'' (tail next) S.empty
-                            else ("board full", score'' + words_bonus)
+                            else ("board full: " ++ show (length cs) ++ " unused", score'' + words_bonus)
           where score' = (if new_words_score > 0 then trace ("scoring word " ++ show new_words_score) else \x->x) $
                          score + new_words_score
                 score'' = trace ("scoring piece " ++ show points ++
