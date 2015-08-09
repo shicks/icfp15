@@ -12,9 +12,9 @@ import Source
 import Control.Applicative ( (<$>), (<*>) )
 import Control.Arrow ( first )
 import Data.Aeson ((.:), FromJSON(..), Value(..))
-import Data.Array ( Array,
-                    accum, array, assocs, bounds, elems, indices, ixmap, listArray, 
-                    (!), (//) )
+import Data.Array.Unboxed ( UArray,
+                            accum, array, assocs, bounds, elems, indices, ixmap, listArray, 
+                            (!), (//) )
 import Data.Ix ( inRange, range )
 import Data.List ( isPrefixOf, maximumBy, sort )
 import Data.Ord ( comparing )

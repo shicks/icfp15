@@ -7,14 +7,14 @@ import Pos
 
 import Control.Applicative ( (<$>), (<*>) )
 import Data.Aeson ((.:), (.:?), decode, FromJSON(..), Value(..))
-import Data.Array ( Array,
-                    accum, array, assocs, bounds, elems, indices, ixmap, listArray, 
-                    (!), (//) )
+import Data.Array.Unboxed ( UArray,
+                            accum, array, assocs, bounds, elems, indices, ixmap, listArray, 
+                            (!), (//) )
 import qualified Data.ByteString.Lazy as B
 import Data.Ix ( Ix(..) )
 import Data.List ( intercalate, sort )
 
-data Board = Board { cells :: Array Pos Bool }
+data Board = Board { cells :: UArray Pos Bool }
 
 empty :: Int -> Int -> Board
 empty width height = Board $ array (start, end) elems

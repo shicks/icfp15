@@ -16,6 +16,7 @@ while ($_ = shift) {
   if ($_ eq '--nopower') { $use_power = 0; next; }
   if ($_ eq '--nosave') { $save = 0; next; }
   if ($_ eq '--quiet') { $verbose = 0; next; }
+  die "Bad arg: $_" unless -e $_;
   push @problems, $_;
   push @args, "-f", $_;
   s/[^0-9]//g;
