@@ -11,7 +11,9 @@
 ai::ai(problem_descriptor problem, std::string tag)
     : problem_(std::move(problem)),
       board_(problem_.width, problem_.height),
-      tag_(std::move(tag)) {
+      tag_(std::move(tag)),
+      units_(),
+      power_table_{0} {
   for (const auto &unit_descr : problem_.units) {
     units_.emplace_back(unit::from_descriptor(unit_descr));
   }
@@ -62,7 +64,7 @@ problem_solution ai::find_solution(std::uint32_t seed) {
 std::string ai::do_unit(const unit &unit) {
   // std::cerr << "finding solution for unit: " << unit.to_string() << std::endl;
 
-  pathfinder pf(&board_, &unit);
+  pathfinder pf(&board_, &unit, &power_table_);
 
   unit_transform spawn_xfrm{unit.spawn_offset(board_.width()), 0};
   path best_path(pf.find_best_path(spawn_xfrm));
@@ -76,7 +78,7 @@ std::string ai::do_unit(const unit &unit) {
   //           << " rotation " << best_path.end.ccw_rotation << std::endl;
   board_.place_unit(unit, best_path.end);
 
-  // std::cerr << "new board: " << std::endl << board_.to_string() << std::endl;
+  std::cerr << "new board: " << std::endl << board_.to_string() << std::endl;
 
   return std::move(best_path.text);
 }

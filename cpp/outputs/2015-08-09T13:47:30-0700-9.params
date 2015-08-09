@@ -1,0 +1,9 @@
+Problems: problems/problem_9.json
+Words:    
+Args:     ./cpp/play_icfp2015 -f problems/problem_9.json -i cpp/outputs/2015-08-09T13:47:30-0700-9
+Commit:   12fa6bd6afa4298e5727e06b2bd89bcfb3e1b193
+
+Stat:
+
+===DIFF===
+
