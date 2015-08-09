@@ -29,6 +29,7 @@ int main(int argc, char *argv[]) {
   unsigned long max_memory(std::numeric_limits<unsigned long>::max());
   std::vector<std::string> phrases;
   std::string tag;
+  std::string output;
 
   for (int argn(1); argn < argc; ++argn) {
     if (strcmp(argv[argn], "-f") == 0) {
@@ -49,6 +50,8 @@ int main(int argc, char *argv[]) {
       phrases.emplace_back(get_argument("-p",argc, argv, &argn));
     } else if (strcmp(argv[argn], "-i") == 0) {
       tag = get_argument("-i",argc,argv,&argn);
+    } else if (strcmp(argv[argn], "-o") == 0) {
+      output = get_argument("-o",argc,argv,&argn);
     } else {
       std::cerr << "unexpected argument: " << argv[argn] << std::endl;
       std::exit(1);
@@ -57,6 +60,7 @@ int main(int argc, char *argv[]) {
   (void) timelimit;
   (void) max_memory;
 
+  Json::Value all_solutions(Json::arrayValue);
   for (const auto &filename : filenames) {
     problem_descriptor problem;
     std::ifstream ifs(filename);
@@ -71,8 +75,24 @@ int main(int argc, char *argv[]) {
     std::cout << b.to_string() << std::endl;
     ai solver(problem, tag);
     auto solutions(solver.find_solutions());
-    (void) solutions;
+    for (const auto &solution : solutions) {
+      all_solutions.append(solution.to_json_value());
+    }
   }
+
+  std::ofstream of;
+  std::ostream *os;
+  if (!output.empty()) {
+    of.open(output);
+    if (!of) {
+      std::cerr << "failed to open output file " << output << std::endl;
+      std::exit(1);
+    }
+    os = &of;
+  } else {
+    os = &std::cout;
+  }
+  *os << Json::StyledWriter().write(all_solutions) << std::endl;
 
   return 0;
 }

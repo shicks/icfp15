@@ -22,8 +22,8 @@ class ai {
   std::string do_unit(const unit &unit);
 
   problem_descriptor problem_;
-  std::string tag_;
   board board_;
+  std::string tag_;
   std::vector<unit> units_;
 };
 

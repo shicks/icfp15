@@ -47,8 +47,8 @@ struct problem_solution {
   std::string tag;
   std::string solution;
 
-  void to_json_value(Json::Value *value);
-  std::string to_string();
+  Json::Value to_json_value() const;
+  std::string to_string() const;
 };
 
 #endif

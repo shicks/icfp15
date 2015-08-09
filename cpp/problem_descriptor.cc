@@ -152,16 +152,15 @@ static constexpr char seed_name[] = "seed";
 static constexpr char tag_name[] = "tag";
 static constexpr char solution_name[] = "solution";
 
-void problem_solution::to_json_value(Json::Value *value) {
-  (*value)[problem_id_name] = Json::LargestInt(id);
-  (*value)[seed_name] = Json::LargestUInt(seed);
-  (*value)[tag_name] = tag;
-  (*value)[solution_name] = solution;
+Json::Value problem_solution::to_json_value() const {
+  Json::Value value(Json::objectValue);
+  value[problem_id_name] = Json::LargestInt(id);
+  value[seed_name] = Json::LargestUInt(seed);
+  value[tag_name] = tag;
+  value[solution_name] = solution;
+  return value;
 }
 
-std::string problem_solution::to_string() {
-  Json::Value value;
-  to_json_value(&value);
-  Json::StyledWriter writer;
-  return writer.write(value);
+std::string problem_solution::to_string() const {
+  return Json::StyledWriter().write(to_json_value());
 }
