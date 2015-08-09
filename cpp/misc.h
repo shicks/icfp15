@@ -4,6 +4,7 @@
 #include <boost/assert.hpp>
 #include <boost/variant.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -23,8 +24,6 @@ static constexpr integer max_board_height = integer(1) << 30;
 static constexpr std::uint32_t source_multiplier = 1103515245U;
 static constexpr std::uint32_t source_increment = 12345U;
 static constexpr std::uint32_t source_mask = 0xffffffffU;
-
-static constexpr integer row_completion_score = 100;
 
 static constexpr char solution_tag[] = "c++";
 
@@ -308,6 +307,7 @@ struct unit {
     for (const auto &member : descr.members) {
       ret.members.emplace_back(member - descr.pivot);
     }
+    std::sort(ret.members.begin(), ret.members.end());
     return ret;
   }
 
