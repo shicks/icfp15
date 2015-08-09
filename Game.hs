@@ -16,7 +16,7 @@ import Data.Array ( Array,
                     accum, array, assocs, bounds, elems, indices, ixmap, listArray, 
                     (!), (//) )
 import Data.Ix ( inRange, range )
-import Data.List ( maximumBy, sort )
+import Data.List ( isPrefixOf, maximumBy, sort )
 import Data.Ord ( comparing )
 import qualified Data.Set as S
 
@@ -58,6 +58,9 @@ realize (Piece u pos r) = map (offset . rot . center) $ members u
 realizeNeighbors :: S.Set Pos -> [(Pos, Int)]
 realizeNeighbors ms = filter (not . (`S.member` ms) . fst) $ concatMap around $ S.toList ms
 
+realizeBelow :: S.Set Pos -> [Pos]
+realizeBelow ms = uniq $ sort $ [m %+ displacement d | m <- S.toList ms, d <- [SW, SE]]
+
 realizeCoM :: Piece -> Pos
 realizeCoM (Piece u pos r) = pos %+ (rotate r $ com u %- pivot u)
 
@@ -66,7 +69,7 @@ realizeHeight ps = minimum $ map posY ps
 
 -- TODO(sdh): consider memoizing the row sizes to make bonus computation quicker
 score :: Int -> Piece -> Board -> Int
-score ls_old piece board = points - gap_penalty + height_bonus + same_row_bonus
+score ls_old piece board = points - gap_penalty + height_bonus + same_row_bonus - cover_penalty
   where points = line_points + line_bonus
         line_points = 100 * (1 + ls) * ls `div` 2
         cellsList = realize piece
@@ -90,9 +93,16 @@ score ls_old piece board = points - gap_penalty + height_bonus + same_row_bonus
         com = realizeCoM piece
         width = boardWidth board
         maxX = width - 1
+        cover_penalty = cover_penalty_factor *
+                        if covered_empty > 0 then covered_filled - covered_empty else 0
+        covered_all = realizeBelow cellsSet
+        covered_empty = length $ filter emptyPos' covered_all
+        covered_filled = length covered_all - covered_empty
+        emptyPos' p = emptyPos board p && not (p `S.member` cellsSet)
         gap_factor = 2
         height_factor = 3
         same_row_factor = 3
+        cover_penalty_factor = 10
         
 
 -- This is more efficient than nub if duplicates are always together (why does this assumption break?!?)
@@ -192,3 +202,60 @@ playGame tag words (Problem id initialBoard units sources) = play sources
                         board' = trace ("Realized: " ++ show realized) $
                                  fill realized board
                         realized = realize $ Piece unit pos rot
+
+
+-- TODO(sdh): Result type (String, Int [String])
+
+-- Runs an Output
+runGame :: [String] -> [Problem] -> Output -> (String, Int)
+runGame words ps (Output pid seed _ sol) = runProblem $ head $ filter (\(Problem i _ _ _) -> i == pid) ps
+  where runProblem (Problem _ initialBoard units sources) =
+          run initialBoard $ map getUnit $ runSource $ head $ filter (\(Source s _) -> s == seed) sources
+            where getUnit :: Int -> Unit
+                  getUnit i = units !! (i `mod` numUnits)
+                  numUnits = length units
+        run :: Board -> [Unit] -> (String, Int)
+        run initialBoard (u:rest) = run' 0 0 S.empty sol "" initialBoard (spawn u initialBoard) rest S.empty
+        run' :: Int -> Int -> S.Set String -> String -> String -> Board -> Piece -> [Unit] -> S.Set Spot -> (String, Int)
+        run' score _ words_used "" _ _ _ _ _ = ("last command", score + 300 * S.size words_used)
+        run' _ _ _ _ _ _ (Piece _ p r) _ seen | (p, r, "", none) `S.member` seen = ("repeat", 0)
+        run' score ls_old words_used (c:cs) prev_cs board piece@(Piece u p r) next seen
+          = case valid piece' board of
+              True -> run' score' ls_old words_used' cs prev_cs' board piece' next seen'
+              False -> if null next
+                       then ("last unit", score'' + words_bonus)
+                       else if valid piece'' board
+                            then -- trace (show board') $
+                                 run' score'' ls words_used' cs prev_cs' board' piece'' (tail next) S.empty
+                            else ("board full", score'' + words_bonus)
+          where score' = score + new_words_score
+                score'' = score' + points + line_bonus
+                points = length (members u) + line_score
+                line_score = 100 * (1 + ls) * ls `div` 2
+                line_bonus = if ls_old > 1
+                             then points * (ls_old - 1) `div` 10
+                             else 0
+                seen' = S.insert (p, r, "", none) seen
+                piece' = case decode c of
+                  Nothing -> piece -- TODO(sdh): return 0, or at least an invalid piece...?
+                  Just (Move d) -> Piece u (p %+ displacement d) r
+                  Just (Rotate CW) -> Piece u p ((r + 1) `mod` order u)
+                  Just (Rotate CCW) -> Piece u p ((r - 1) `mod` order u)
+                piece'' = spawn (head next) board 
+                board' = fill cellsList board
+                words_used' = foldl (flip S.insert) words_used new_words
+                prev_cs' = c:prev_cs
+                new_words = filter (`isPrefixOf`prev_cs') reversed
+                new_words_score = sum $ map ((2*) . length) $ new_words
+                words_bonus = 300 * S.size words_used
+                -- the following are copied from other places
+                cellsList = realize piece
+                cellsSet = S.fromList cellsList
+                ys = uniq $ sort $ map posY cellsList
+                ls = length $ filter full ys
+                maxX = posX $ snd $ bounds $ cells board
+                full :: Int -> Bool
+                full y = all (\p -> (cells board ! p) || (p `S.member` cellsSet)) $
+                         map (\x -> Pos x y) [0..maxX]
+        reversed = map reverse words
+        none = ([], "", "")

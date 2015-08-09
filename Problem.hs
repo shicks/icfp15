@@ -51,7 +51,19 @@ instance ToJSON Output where
                                                   , "tag" .= tag
                                                   , "solution" .= solution ]
 
+instance FromJSON Output where
+  parseJSON (Object v) = Output <$>
+                         (v .: "problemId") <*>
+                         (v .: "seed") <*>
+                         (v .: "tag") <*>
+                         (v .: "solution")
+
 readProblem :: String -> IO Problem
 readProblem f = do json <- B.readFile f
                    Just problem <- return $ decode json
                    return problem
+
+readSolutions :: String -> IO [Output]
+readSolutions f = do json <- B.readFile f
+                     Just sol <- return $ decode json
+                     return sol
