@@ -6,7 +6,7 @@ clean:
 CXX = g++ -std=c++11
 
 CXXFLAGS = \
-	-ggdb -Wall \
+	-O3 -Wall -DNDEBUG \
 	$(shell pkg-config --cflags jsoncpp)
 
 LIBS = \
@@ -20,6 +20,7 @@ LIBS = \
 PLAY_ICFP2015_SOURCES = \
 	board.cc \
 	problem_descriptor.cc \
+	string_matcher.cc \
 	pathfinder.cc \
 	ai.cc \
 	main.cc

@@ -69,11 +69,14 @@ int main(int argc, char *argv[]) {
       std::exit(1);
     }
     board b(problem);
-    std::cout << filename << ":" << std::endl;
-    std::cout << "width: " << problem.width << ", height: " << problem.height
+    std::cerr << filename << ":" << std::endl;
+    std::cerr << "width: " << problem.width << ", height: " << problem.height
               << std::endl;
-    std::cout << b.to_string() << std::endl;
+    std::cerr << b.to_string() << std::endl;
     ai solver(problem, tag);
+    for (const auto &phrase : phrases) {
+      solver.add_phrase_of_power(phrase);
+    }
     auto solutions(solver.find_solutions());
     for (const auto &solution : solutions) {
       all_solutions.append(solution.to_json_value());

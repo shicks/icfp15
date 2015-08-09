@@ -4,6 +4,7 @@
 #include "problem_descriptor.h"
 #include "board.h"
 #include "misc.h"
+#include "string_matcher.h"
 
 class ai {
  public:
@@ -15,6 +16,10 @@ class ai {
   inline ai &operator=(const ai &that) = delete;
   inline ai &operator=(ai &&that) = delete;
 
+  void add_phrase_of_power(std::string string) {
+    power_table_.add_pattern(std::move(string));
+  }
+
   std::vector<problem_solution> find_solutions();
 
  private:
@@ -25,6 +30,7 @@ class ai {
   board board_;
   std::string tag_;
   std::vector<unit> units_;
+  string_match_table power_table_;
 };
 
 #endif
