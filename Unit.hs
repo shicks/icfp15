@@ -57,15 +57,15 @@ instance Show Unit where
            ++ show' False (range (Pos 0 0, extent))
     where width = 1 + posX extent
           show' _ [] = ""
-          show' offset ps = (if offset then {- (' ':) -} id else id) $ row ps $
+          show' offset ps = (if offset then (' ':) else id) $ row ps $
                             show' (not offset) (drop width ps)
           row [] _ = ""
           row ps rest = '|':row' (take width ps) rest
           row' [] rest = '|':'\n':rest
           row' (p:ps) rest = s:space (row' ps rest)
             where s = if p == pivot
-                      then if p `elem` members then '@' else '.'
-                      else if p `elem` members then 'O' else ' '
+                      then if p `elem` members then '@' else 'x'
+                      else if p `elem` members then 'O' else '.'
                   space = if null ps then id else (' ':)
 
 instance FromJSON Unit where
