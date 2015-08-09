@@ -253,9 +253,9 @@ path pathfinder::find_best_path(unit_transform start_xfrm) {
   }
   BOOST_ASSERT(have_best_score);
 
-  std::cerr << "best ending location: " << best_xfrm.offset.to_string()
-            << " rotation " << best_xfrm.ccw_rotation << " score " << best_score
-            << std::endl;
+  // std::cerr << "best ending location: " << best_xfrm.offset.to_string()
+  //           << " rotation " << best_xfrm.ccw_rotation << " score " << best_score
+  //           << std::endl;
 
   path ret;
   auto path_cache_iter(path_cache.find(best_xfrm));
