@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+
+use strict;
+
+my @probs = (13, 15, 20);
+my @query = ();
+while ($_ = shift) {
+  my $num = shift @probs or die "too many";
+  my $code = $_;
+  my $len = length($code) - 2;
+  $code =~ s/(.).*(.)/$1$len$2/;
+  my $json = '{"problemId":NUM,"seed":0,"tag":"NUM:CODE","solution":"SOL"}';
+  my $sol = $_ . 'lalalalalalalalalalalalalalalalalala';
+  $json =~ s/NUM/$num/g;
+  $json =~ s/CODE/$code/g;
+  $json =~ s/SOL/$sol/g;
+  push @query, $json;
+}
+
+$" = ',';
+system 'curl', '--user', ':xpjucYvS2nEAjnlhHLNAjO32W8TS5s0VhBCPQUOoWvU=',
+  '-X', 'POST', '-H', 'Content-Type: application/json', '-d', "[@query]",
+  'https://davar.icfpcontest.org/teams/232/solutions';
