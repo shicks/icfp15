@@ -16,6 +16,18 @@ fungi, who transported humans through the Æther via so-called
 "brain cylinders."
 
 
+## Dependencies
+
+The following dependencies are required for the Haskell and C++
+programs, respectively:
+
+* libghc-aeson-dev
+* libjsoncpp-dev
+* libboost-all-dev
+
+Only the former is required to build the top-level Haskell binary.
+
+
 ## Our Approach
 
 Our initial approach was to diversify, with one of us writing an
