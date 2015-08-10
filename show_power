@@ -1,0 +1,14 @@
+#!/usr/bin/perl
+
+use strict;
+
+$_ = `curl --user :xpjucYvS2nEAjnlhHLNAjO32W8TS5s0VhBCPQUOoWvU= -X GET -H "Content-Type: application/json" https://davar.icfpcontest.org/teams/232/solutions`;
+
+@_ = split /\},\{/;
+
+foreach (@_) {
+  if (/tag":"_POWER_"/ and not /powerScore":0,/) {
+    /solution":"la([^"]*)lalalalalalalalalalalalalalalalalala"/ or die "could not find solution";
+    print "$1\n";
+  }
+}
