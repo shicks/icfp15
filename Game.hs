@@ -109,7 +109,7 @@ score ls_old piece board = points            -- favor choices that get us points
         width = boardWidth board
         maxX = width - 1
         cover_penalty = cover_penalty_factor *
-                        if covered_empty > 0 then covered_filled - covered_empty else 0
+                        if covered_empty > 0 then max (covered_filled - covered_empty) 0 else 0
         covered_all = realizeBelow cellsSet
         covered_empty = length $ filter emptyPos' covered_all
         covered_filled = length covered_all - covered_empty
