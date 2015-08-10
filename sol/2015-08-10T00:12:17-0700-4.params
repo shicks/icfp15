@@ -1,0 +1,68 @@
+Problems: problems/problem_4.json
+Words:    "ei!" "ia! ia!" "r'lyeh" "yuggoth" "tsathoggua" "yogsothoth" "ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn."
+Args:     ./main -f problems/problem_4.json -p ei! -p ia! ia! -p r'lyeh -p yuggoth -p tsathoggua -p yogsothoth -p ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn. --verbose --tag sol/2015-08-10T00:12:17-0700-4
+Commit:   00e2af3fff7a08f3a1b5a71e69766cbc609ec1c9
+
+Stat:
+ Game.hs | 30 ++++++++++++++++++++----------
+ 1 file changed, 20 insertions(+), 10 deletions(-)
+
+===DIFF===
+diff --git a/Game.hs b/Game.hs
+index f7c504e..a0d3a1e 100644
+--- a/Game.hs
++++ b/Game.hs
+@@ -78,20 +78,25 @@ realizeHeight ps = minimum $ map posY ps
+ 
+ -- TODO(sdh): consider memoizing the row sizes to make bonus computation quicker
+ score :: Int -> Piece -> Board -> Int
+-score ls_old piece board = points - gap_penalty + height_bonus +
+-                           same_row_bonus - cover_penalty - max 0 slant_penalty
++score ls_old piece board = points
++                           - gap_penalty
++                           + height_bonus
++                           + same_row_bonus
++                           - cover_penalty
++                           - slant_penalty
++                           -- - single_line_penalty
+   where points = line_points + line_bonus
+         line_points = 100 * (1 + ls) * ls `div` 2
+         cellsList = realize piece
+         cellsSet = S.fromList cellsList
+         ys' = sort $ map posY cellsList
+         ys = uniq ys'
+-        ls = length $ filter full ys
++        fulls = filter full ys
++        ls = length fulls
+         same_row_bonus = (sum $ map same_row ys') * same_row_factor
+-        same_row y = length (filter ((==y) . posY) cellsList) + (rows board ! y)
++        same_row y = length (filter (==y) ys') + (rows board ! y)
+         full :: Int -> Bool
+-        full y = all (\p -> (cells board ! p) || (p `S.member` cellsSet)) $
+-                 map (\x -> Pos x y) [0..maxX]
++        full = (== width) . same_row
+         line_bonus = if ls_old > 1 then (ls_old - 1) * line_points `div` 10 else 0
+         -- TODO(sdh): weight underside gaps more heavily?
+         -- TODO(sdh): consider weighting by # filled on the same line...
+@@ -112,11 +117,16 @@ score ls_old piece board = points - gap_penalty + height_bonus +
+         xy_corr = avg (map (\(Pos x y) -> x * y) cellsList) -
+                   avg (map posX cellsList) * avg (map posY cellsList)
+         avg xs = sum xs `div` length xs
+-        slant_penalty = if xy_corr < 0 then 2 else 0
+-        gap_factor = 2
+-        height_factor = 3
+-        same_row_factor = 3
++        slant_penalty = if xy_corr < 0 then 5 else 0
++        gap_factor = 5
++        height_factor = 2
++        same_row_factor = 5
+         cover_penalty_factor = 10
++        -- attempt to make a clear path for multiple lines
++        -- single_line_penalty | height > 5 && ls == 1 && not (cells board ! Pos 4 (head fulls)) = 2 * line_bonus
++        --                     | height > 5 && ls == 0 && any ((==4) . posX) cellsList = 100
++        --                     | otherwise = 0
++        
+ 
+ -- This is more efficient than nub if duplicates are always together (why does this assumption break?!?)
+ uniq :: Eq a => [a] -> [a]
+

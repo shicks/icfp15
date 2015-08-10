@@ -1,0 +1,54 @@
+Problems: problems/problem_10.json problems/problem_11.json problems/problem_12.json problems/problem_13.json problems/problem_14.json problems/problem_15.json problems/problem_16.json problems/problem_17.json problems/problem_18.json problems/problem_19.json
+Words:    "ei!" "ia! ia!" "r'lyeh" "yuggoth" "tsathoggua" "yogsothoth" "ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn."
+Args:     ./main -f problems/problem_10.json -f problems/problem_11.json -f problems/problem_12.json -f problems/problem_13.json -f problems/problem_14.json -f problems/problem_15.json -f problems/problem_16.json -f problems/problem_17.json -f problems/problem_18.json -f problems/problem_19.json -p ei! -p ia! ia! -p r'lyeh -p yuggoth -p tsathoggua -p yogsothoth -p ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn. --verbose --tag sol/2015-08-09T22:52:07-0700-10,11,12,13,14,15,16,17,18,19
+Commit:   c189795f886ded5b835cf2e7bc3f0b5442b22e13
+
+Stat:
+ Main.hs    | 1 +
+ Makefile   | 3 +++
+ show_power | 5 ++++-
+ 3 files changed, 8 insertions(+), 1 deletion(-)
+
+===DIFF===
+diff --git a/Main.hs b/Main.hs
+index 54a765d..6ae6a30 100644
+--- a/Main.hs
++++ b/Main.hs
+@@ -35,6 +35,7 @@ parseArgs [] = return $ CLI [] 0 0 "" [] False
+ parseArgs ("-f":f:rest) = (\c -> c { files = f:files c }) `fmap` parseArgs rest
+ parseArgs ("-p":p:rest) = (\c -> c { power = p:power c }) `fmap` parseArgs rest
+ parseArgs ("-t":t:rest) = (\c -> c { time = read t }) `fmap` parseArgs rest
++parseArgs ("-c":c:rest) = parseArgs rest -- ignore cpu param completely
+ parseArgs ("-m":m:rest) = (\c -> c { mem = read m }) `fmap` parseArgs rest
+ parseArgs ("--tag":t:rest) = (\c -> c { tag = t }) `fmap` parseArgs rest
+ parseArgs ("--score":rest) = (\c -> c { doScore = True }) `fmap` parseArgs rest
+diff --git a/Makefile b/Makefile
+index 8513095..e59cab8 100644
+--- a/Makefile
++++ b/Makefile
+@@ -1,5 +1,8 @@
+ SRCS=Board.hs Debug.hs Game.hs Pos.hs Problem.hs Source.hs Unit.hs
+ 
++play_icfp2015: $(SRCS) Main.hs
++	ghc -o play_icfp2015 --make Main
++
+ main: $(SRCS) Main.hs
+ 	ghc -o main --make Main
+ 
+diff --git a/show_power b/show_power
+index b0b7ca5..8e7a53d 100755
+--- a/show_power
++++ b/show_power
+@@ -7,7 +7,10 @@ $_ = `curl --user :xpjucYvS2nEAjnlhHLNAjO32W8TS5s0VhBCPQUOoWvU= -X GET -H "Conte
+ @_ = split /\},\{/;
+ 
+ foreach (@_) {
+-  if (/tag":"_POWER_"/ and not /powerScore":0,/) {
++  if ($ARGV[0] eq '--all') {
++    s/(solution":"[^"]{50})[^a"]*/$1/;
++    print "$_\n";
++  } elsif (/tag":"_POWER_"/ and not /powerScore":(?:0|null),/) {
+     /solution":"la([^"]*)lalalalalalalalalalalalalalalalalala"/ or die "could not find solution";
+     print "$1\n";
+   }
+

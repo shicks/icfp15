@@ -1,0 +1,36 @@
+Problems: problems/problem_20.json problems/problem_21.json problems/problem_22.json problems/problem_23.json
+Words:    "ei!" "ia! ia!" "r'lyeh" "yuggoth" "tsathoggua" "yogsothoth" "ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn."
+Args:     ./main -f problems/problem_20.json -f problems/problem_21.json -f problems/problem_22.json -f problems/problem_23.json -p ei! -p ia! ia! -p r'lyeh -p yuggoth -p tsathoggua -p yogsothoth -p ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn. --verbose --tag sol/2015-08-09T22:56:31-0700-20,21,22,23
+Commit:   4c64409961ddbb2703a2d1ad75eb7f02306d45b2
+
+Stat:
+ Game.hs | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+===DIFF===
+diff --git a/Game.hs b/Game.hs
+index 7851183..31cc2ea 100644
+--- a/Game.hs
++++ b/Game.hs
+@@ -191,10 +191,10 @@ findBest initialPower wordList board (Piece unit p r) = search [(p, r, "", initi
+           -- | not (hasPower w) && isSeen openSeen p = search queue end seen openSeen
+           | otherwise = --trace ("ADDING MORE TO spot=" ++ show spot ++ ", queue=" ++ show queue) $
+                         search (power ++ followups ++ queue) end (S.insert (strip spot) seen) openSeen'
+-          where followups = map (\c -> apply unit c $ removePower spot) commandChars
++          where followups = map (\c -> apply unit c $ removePower spot) (commandChars seed)
+                 power = if hasPower w
+                         then [applyPower unit spot]
+-                        else map (\w -> addPower unit w spot) $ rot'' (length queue) wordList
++                        else map (\w -> addPower unit w spot) $ rot'' seed wordList
+                 openSeen' = insertSeen p openSeen
+         initialOpenSeen = openRows unit board
+         piece :: Spot -> Piece
+@@ -205,6 +205,7 @@ findBest initialPower wordList board (Piece unit p r) = search [(p, r, "", initi
+         findMax = snd . maximumBy (comparing fst) .
+                   map (\s -> (powerScore s + score 0 (piece s) board, s)) .
+                   S.toList
++        seed = length queue
+         -- Note: doesn't count power_bonus, since it's not a marginal gain
+         powerScore (_, _, _, (power, _, _)) = sum $ map (\p -> length p) power
+         rot'' = rot' (length wordList)
+
