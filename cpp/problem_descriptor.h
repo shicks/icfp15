@@ -42,13 +42,14 @@ struct problem_descriptor {
 };
 
 struct problem_solution {
+  bool from_json_value(const Json::Value &root);
+  Json::Value to_json_value() const;
+  std::string to_string() const;
+
   integer id;
   std::uint32_t seed;
   std::string tag;
   std::string solution;
-
-  Json::Value to_json_value() const;
-  std::string to_string() const;
 };
 
 #endif

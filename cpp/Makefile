@@ -1,5 +1,5 @@
 
-all: play_icfp2015
+all: play_icfp2015 replay
 clean:
 	rm -vf $(PLAY_ICFP2015_OBJECTS) $(PLAY_ICFP2015_DEPFILES) play_icfp2015
 
@@ -27,7 +27,16 @@ PLAY_ICFP2015_SOURCES = \
 PLAY_ICFP2015_OBJECTS = $(PLAY_ICFP2015_SOURCES:%.cc=%.o)
 PLAY_ICFP2015_DEPFILES = $(PLAY_ICFP2015_OBJECTS:%.o=%.o.deps)
 
+REPLAY_SOURCES = \
+	board.cc \
+	problem_descriptor.cc \
+	replay.cc
+REPLAY_OBJECTS = $(REPLAY_SOURCES:%.cc=%.o)
+REPLAY_DEPFILES = $(REPLAY_OBJECTS:%.o=%.o.deps)
+
 play_icfp2015: $(PLAY_ICFP2015_OBJECTS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
+replay: $(REPLAY_OBJECTS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS)
 
--include $(PLAY_ICFP2015_DEPFILES)
+-include $(PLAY_ICFP2015_DEPFILES) $(REPLAY_DEPFILES)
