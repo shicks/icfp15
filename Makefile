@@ -1,5 +1,8 @@
 SRCS=Board.hs Debug.hs Game.hs Pos.hs Problem.hs Source.hs Unit.hs
 
+play_icfp2015: $(SRCS) Main.hs
+	ghc -o play_icfp2015 --make Main
+
 main: $(SRCS) Main.hs
 	ghc -o main --make Main
 

@@ -7,7 +7,10 @@ $_ = `curl --user :xpjucYvS2nEAjnlhHLNAjO32W8TS5s0VhBCPQUOoWvU= -X GET -H "Conte
 @_ = split /\},\{/;
 
 foreach (@_) {
-  if (/tag":"_POWER_"/ and not /powerScore":0,/) {
+  if ($ARGV[0] eq '--all') {
+    s/(solution":"[^"]{50})[^a"]*/$1/;
+    print "$_\n";
+  } elsif (/tag":"_POWER_"/ and not /powerScore":(?:0|null),/) {
     /solution":"la([^"]*)lalalalalalalalalalalalalalalalalala"/ or die "could not find solution";
     print "$1\n";
   }
