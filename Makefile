@@ -1,10 +1,10 @@
 SRCS=Board.hs Debug.hs Game.hs Pos.hs Problem.hs Source.hs Unit.hs
 
 play_icfp2015: $(SRCS) Main.hs
-	ghc -O3 -o play_icfp2015 --make Main
+	ghc -O2 -o play_icfp2015 --make Main
 
 main: $(SRCS) Main.hs
-	ghc -O3 -o main --make Main
+	ghc -O2 -o main --make Main
 
 showboard: $(SRCS) ShowBoard.hs
 	ghc -o showboard --make ShowBoard
