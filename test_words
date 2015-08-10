@@ -25,11 +25,15 @@ while (@ARGV) {
   close WORD;
   my $result = `./score --split -f problems/problem_$num.json -s /tmp/word`;
   print $result;
-  if ($result !~ /repeat/) {
-    shift @probs;
-    push @query, $json;
+  if ($result =~ /repeat/ or ($result =~ /(\d+) unused/ and $1 > 36)) {
+    print "Skipping $_\n";
+    next;
   }
+  shift @probs;
+  push @query, $json;
 }
+
+die "nothing to do" unless @query;
 
 $" = ',';
 my @cmd = ('curl', '--user', ':xpjucYvS2nEAjnlhHLNAjO32W8TS5s0VhBCPQUOoWvU=',
