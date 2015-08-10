@@ -2,26 +2,33 @@
 
 use strict;
 
-my @probs = (15, 20);
+my @probs = ('12:0', '12:24762', '12:24103', '12:12700', '12:5864', '12:1155', '12:24803', '12:29992', '12:18660', '12:19102', '15:0', '20:0');
 my @query = ();
 while (@ARGV) {
   $_ = shift;
-  my $num = shift @probs or die "too many";
-  next unless $_;
+  my $prob = $probs[0] or die "too many";
+  $prob =~ /(\d+):(\d+)/ or die 'bad form';
+  my $num = $1;
+  my $seed = $2;
   my $code = $_;
   my $len = length($code) - 2;
   $code =~ s/(.).*(.)/$1$len$2/;
-  my $json = '{"problemId":NUM,"seed":0,"tag":"____NUM:CODE____","solution":"SOL"}';
+  my $json = '{"problemId":NUM,"seed":SEED,"tag":"_POWER_","solution":"SOL"}';
   my $sol = 'la' . $_ . 'lalalalalalalalalalalalalalalalalala';
   $json =~ s/NUM/$num/g;
+  $json =~ s/SEED/$seed/g;
   $json =~ s/CODE/$code/g;
   $json =~ s/SOL/$sol/g;
-  push @query, $json;
 
   open WORD, ">/tmp/word";
   print WORD "[$json]\n";
   close WORD;
-  system "./score --split -f problems/problem_$num.json -s /tmp/word";
+  my $result = `./score --split -f problems/problem_$num.json -s /tmp/word`;
+  print $result;
+  if ($result !~ /repeat/) {
+    shift @probs;
+    push @query, $json;
+  }
 }
 
 $" = ',';
