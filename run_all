@@ -1,0 +1,13 @@
+#!/bin/sh
+
+./run_main problems/problem_?.json
+./upload $(ls -t sol/*-0,1,2,3,4,5,6,7,8,9.json | head -1)
+
+./run_main problems/problem_1?.json
+./upload $(ls -t sol/*-10,11,12,13,14,15,16,17,18,19.json | head -1)
+
+./run_main problems/problem_2[0123].json
+./upload $(ls -t sol/*-20,21,22,23.json | head -1)
+
+./run_main problems/problem_24.json
+./upload $(ls -t sol/*-24.json | head -1)

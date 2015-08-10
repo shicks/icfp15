@@ -16,7 +16,7 @@ import Data.Array.Unboxed ( UArray,
                             accum, array, assocs, bounds, elems, indices, ixmap, listArray, 
                             (!), (//) )
 import Data.Ix ( inRange, range )
-import Data.List ( isPrefixOf, maximumBy, sort )
+import Data.List ( isPrefixOf, maximumBy, sort, sortBy )
 import Data.Ord ( comparing )
 import qualified Data.Set as S
 
@@ -55,11 +55,13 @@ realize (Piece u pos r) = map (offset . rot . center) $ members u
 --         offset = (%+ pos)
 --         rot = rotate r
 
-around' :: Board -> Pos -> [(Pos, Int)]
-around' b@(Board _ r) p = map fix $ around p
-  where fix (p, 5) | r!(posY p) > full = (p, 25)
+around'' :: Board -> Pos -> [(Pos, Int)]
+around'' b@(Board _ r) p = map fix $ around p
+  where fix (p, 5) | (bounds r `inRange` posY p) && ((r ! posY p) > full) = (p, 25)
         fix z = z
         full = 4 * boardWidth b `div` 5
+
+around' = const around
 
 realizeNeighbors :: Board -> S.Set Pos -> [(Pos, Int)]
 realizeNeighbors b ms =
@@ -82,11 +84,11 @@ score ls_old piece board = points - gap_penalty + height_bonus +
         line_points = 100 * (1 + ls) * ls `div` 2
         cellsList = realize piece
         cellsSet = S.fromList cellsList
-        ys = uniq $ sort $ map posY cellsList
+        ys' = sort $ map posY cellsList
+        ys = uniq ys'
         ls = length $ filter full ys
-        same_row_bonus = (sum $ map same_row ys) * same_row_factor
-        same_row y = length $ filter (\p -> (cells board ! p) || (p `S.member` cellsSet)) $
-                     map (\x -> Pos x y) [0..maxX]
+        same_row_bonus = (sum $ map same_row ys') * same_row_factor
+        same_row y = length (filter ((==y) . posY) cellsList) + (rows board ! y)
         full :: Int -> Bool
         full y = all (\p -> (cells board ! p) || (p `S.member` cellsSet)) $
                  map (\x -> Pos x y) [0..maxX]
@@ -156,22 +158,45 @@ hasPower (_, w, _) = not $ null w
 
 type Spot = (Pos, Int, String, Power) -- pos, rot, sol, power
 
+emptyRow :: Board -> Int -> Bool
+emptyRow (Board _ r) y = (bounds r `inRange` y) && (r!y) == 0
+
+data OpenRows = OpenRows (S.Set Int) (S.Set Int)
+openRows :: Unit -> Board -> OpenRows
+openRows u b@(Board _ r) = OpenRows S.empty all
+  where all = S.difference (S.fromList [0..maxY])
+                           (S.fromList [y + h | y <- full, h <- [(-rad)..(rad-1)]])
+        full = filter (\y -> (r!y) > 0) [0..maxY]
+        rad = radius u
+        maxY = snd $ bounds r
+        
+isSeen :: OpenRows -> Pos -> Bool
+isSeen (OpenRows seen all) (Pos _ y) = y `S.member` seen
+
+insertSeen :: Pos -> OpenRows -> OpenRows
+insertSeen (Pos _ y) o@(OpenRows seen all) = if y `S.member` all
+                                             then OpenRows (S.insert y seen) all
+                                             else o
+
 -- Actually explore
 findBest :: Power -> [String] -> Board -> Piece -> Spot
-findBest initialPower wordList board (Piece unit p r) = search [(p, r, "", initialPower)] S.empty S.empty
-  where search :: [Spot] -> S.Set Spot -> S.Set Spot -> Spot
-        search [] end _ = findMax end
-        search (spot@(_,_,_,w):queue) end seen
+findBest initialPower wordList board (Piece unit p r) = search [(p, r, "", initialPower)] S.empty S.empty initialOpenSeen
+  where search :: [Spot] -> S.Set Spot -> S.Set Spot -> OpenRows -> Spot
+        search [] end _ openSeen = findMax end
+        search (spot@(p,_,_,w):queue) end seen openSeen
           | strip spot `S.member` seen = --trace ("ALREADY SEEN " ++ show spot) $
-                                         search queue end seen
+                                         search queue end seen openSeen
           | not $ valid (piece spot) board = --trace ("INVALID " ++ show spot) $
-                                             search queue (S.insert (undo unit spot) end) seen
+                                             search queue (S.insert (undo unit spot) end) seen openSeen
+          -- | not (hasPower w) && isSeen openSeen p = search queue end seen openSeen
           | otherwise = --trace ("ADDING MORE TO spot=" ++ show spot ++ ", queue=" ++ show queue) $
-                        search (power ++ followups ++ queue) end (S.insert (strip spot) seen)
-            where followups = map (\c -> apply unit c $ removePower spot) commandChars
-                  power = if hasPower w
-                          then [applyPower unit spot]
-                          else map (\w -> addPower unit w spot) $ rot (length queue) wordList
+                        search (power ++ followups ++ queue) end (S.insert (strip spot) seen) openSeen'
+          where followups = map (\c -> apply unit c $ removePower spot) commandChars
+                power = if hasPower w
+                        then [applyPower unit spot]
+                        else map (\w -> addPower unit w spot) $ rot'' (length queue) wordList
+                openSeen' = insertSeen p openSeen
+        initialOpenSeen = openRows unit board
         piece :: Spot -> Piece
         piece (p, r, _, _) = Piece unit p r
         strip :: Spot -> Spot  -- removes the string for set entry
@@ -182,6 +207,15 @@ findBest initialPower wordList board (Piece unit p r) = search [(p, r, "", initi
                   S.toList
         -- Note: doesn't count power_bonus, since it's not a marginal gain
         powerScore (_, _, _, (power, _, _)) = sum $ map (\p -> length p) power
+        rot'' = rot' (length wordList)
+
+
+-- weighted rot
+rot' :: Int -> Int -> [a] -> [a]
+rot' tot seed list = rot index list
+  where seed' = sqtot - (seed `mod` sqtot) - 1
+        index = (tot - (floor $ sqrt $ fromIntegral seed') - 1) `mod` tot
+        sqtot = tot * tot
 
 -- used to pseudo-randomize which words we try to use
 rot :: Int -> [a] -> [a]
@@ -190,8 +224,9 @@ rot n as = drop nn as ++ take nn as
   where nn = n `mod` length as
 
 playGame :: String -> [String] -> Problem -> [Output]
-playGame tag words (Problem id initialBoard units sources) = play sources
-  where play [] = []
+playGame tag words' (Problem id initialBoard units sources) = play sources
+  where words = sortBy (comparing length) words'
+        play [] = []
         play (source:rest) = play1 source : play rest
         play1 :: Source -> Output
         play1 source = Output id (seed source) tag $
