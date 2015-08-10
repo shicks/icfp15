@@ -1,0 +1,9 @@
+Problems: problems/problem_4.json
+Words:    "ei!" "ia! ia!" "r'lyeh" "yuggoth" "tsathoggua" "yogsothoth" "ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn."
+Args:     ./main -f problems/problem_4.json -p ei! -p ia! ia! -p r'lyeh -p yuggoth -p tsathoggua -p yogsothoth -p ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn. --verbose --tag sol/2015-08-10T00:35:19-0700-4
+Commit:   df04a2a6828e6428dfa4a3eca09ae14be183c214
+
+Stat:
+
+===DIFF===
+

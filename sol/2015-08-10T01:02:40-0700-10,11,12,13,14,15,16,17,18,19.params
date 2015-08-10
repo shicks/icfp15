@@ -1,0 +1,9 @@
+Problems: problems/problem_10.json problems/problem_11.json problems/problem_12.json problems/problem_13.json problems/problem_14.json problems/problem_15.json problems/problem_16.json problems/problem_17.json problems/problem_18.json problems/problem_19.json
+Words:    "ei!" "ia! ia!" "r'lyeh" "yuggoth" "tsathoggua" "yogsothoth" "ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn."
+Args:     ./main -f problems/problem_10.json -f problems/problem_11.json -f problems/problem_12.json -f problems/problem_13.json -f problems/problem_14.json -f problems/problem_15.json -f problems/problem_16.json -f problems/problem_17.json -f problems/problem_18.json -f problems/problem_19.json -p ei! -p ia! ia! -p r'lyeh -p yuggoth -p tsathoggua -p yogsothoth -p ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn. --verbose --tag sol/2015-08-10T01:02:40-0700-10,11,12,13,14,15,16,17,18,19
+Commit:   e3e705ea329dec787d48ecbbcf100d8fd3759d29
+
+Stat:
+
+===DIFF===
+
