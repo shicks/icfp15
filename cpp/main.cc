@@ -39,12 +39,14 @@ int main(int argc, char *argv[]) {
       timelimit = std::strtoul(get_argument("-t", argc, argv, &argn), &endptr, 10);
       if (*endptr != '\0') {
         std::cerr << "invalid argument to -t" << std::endl;
+        std::exit(1);
       }
     } else if (strcmp(argv[argn], "-m") == 0) {
       char *endptr;
       max_memory = std::strtoul(get_argument("-m", argc, argv, &argn), &endptr, 10);
       if (*endptr != '\0') {
         std::cerr << "invalid argument to -t" << std::endl;
+        std::exit(1);
       }
     } else if (strcmp(argv[argn], "-p") == 0) {
       phrases.emplace_back(get_argument("-p",argc, argv, &argn));

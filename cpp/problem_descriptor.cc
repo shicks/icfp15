@@ -152,6 +152,41 @@ static constexpr char seed_name[] = "seed";
 static constexpr char tag_name[] = "tag";
 static constexpr char solution_name[] = "solution";
 
+bool problem_solution::from_json_value(const Json::Value &root_value) {
+  BOOST_ASSERT(unit != nullptr);
+  if (!root_value.isObject()) return false;
+
+  if (!root_value.isMember(problem_id_name) ||
+      !int_from_json_value(root_value[problem_id_name],
+                           std::numeric_limits<integer>::min(),
+                           std::numeric_limits<integer>::max(),
+                           &id))
+    return false;
+  std::cerr << "problem_id: " << id << std::endl;
+
+  if (!root_value.isMember(seed_name) ||
+      !uint_from_json_value(root_value[seed_name],
+                            std::numeric_limits<std::uint32_t>::min(),
+                            std::numeric_limits<std::uint32_t>::max(),
+                            &seed))
+      return false;
+  std::cerr << "seed: " << seed << std::endl;
+
+  if (!root_value.isMember(tag_name) ||
+      !root_value[tag_name].isString())
+      return false;
+  tag = root_value[tag_name].asString();
+  std::cerr << "tag: " << tag << std::endl;
+
+  if (!root_value.isMember(solution_name) ||
+      !root_value[solution_name].isString())
+      return false;
+  solution = root_value[solution_name].asString();
+  std::cerr << "solution: " << solution << std::endl;
+
+  return true;
+}
+
 Json::Value problem_solution::to_json_value() const {
   Json::Value value(Json::objectValue);
   value[problem_id_name] = Json::LargestInt(id);

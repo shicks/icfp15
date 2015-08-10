@@ -39,6 +39,17 @@ class board {
     fill(problem.filled);
   }
 
+  board &operator=(const board &that) {
+    if (this != &that) {
+      width_ = that.width_;
+      height_ = that.height_;
+      cells_ = that.cells_;
+      num_set_ = that.num_set_;
+      row_occupancy_ = that.row_occupancy_;
+    }
+    return *this;
+  }
+
   inline integer width() const { return width_; }
   inline integer height() const { return height_; }
 
