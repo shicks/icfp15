@@ -16,7 +16,7 @@ fungi, who transported humans through the Æther via so-called
 "brain cylinders."
 
 
-## Dependencies
+## Running the Solution
 
 The following dependencies are required for the Haskell and C++
 programs, respectively:
@@ -26,6 +26,20 @@ programs, respectively:
 * libboost-all-dev
 
 Only the former is required to build the top-level Haskell binary.
+
+In addition to the required flags, we also support the following:
+
+* `--verbose`: outputs all the intermediate state along the way,
+  providing a nice visualization of the game.
+* `--tag TAG`: allows specifying the tag field for the solution.
+* `--score`: outputs the score for solutions immediately after
+  computing them.
+
+While we accept the time, memory, and CPU count flags, we do not
+actually do anything with them.  This means that if run with many
+`-f` flags, a single long-running problem will result in no output
+at all.  This is unfortunate, so we would humbly prefer that you
+only run one problem at a time if the total run time is constrained.
 
 
 ## Our Approach
@@ -133,3 +147,34 @@ these rows (rather than exploring the east/west directions),
 until the piece was within its "radius" of a non-empty row.
 In practice, any speed boost from this optimization was not
 actually measurable.
+
+
+## Final Thoughts
+
+We found the programming part of the problem to be very
+interesting and rewarding.  It was particularly rewarding
+for the several hours when our naive algorithm had the top
+score for problem #24, though eventually it was supplanted
+and never quite recovered.
+
+The search for hidden words of power, on the other hand,
+was much more frustrating and we could have done without
+it.  Hopefully we meet the qualification bar and therefore
+won't be penalized for not being able to figure out the
+silly puzzles.
+
+It was surprising to see how poorly the computer was at
+playing Tetris.  Watching it fill the pieces in, we could
+see tons of rookie mistakes, and yet figuring out how to
+teach it not to do that was unfathomably tricky.  On the
+other hand, it's humbling to think that if Google's DeepMind
+can master Breakout from 300 games *ex nihilo*, that a basic
+(though ridiculously large) neural network could probably
+outperform our heuristics without even trying.
+
+
+## Thanks
+
+We would like to thank the organizing committee for the
+excellent work they put into this contest.  It was loads
+of fun!
