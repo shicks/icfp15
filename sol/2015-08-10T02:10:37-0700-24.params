@@ -1,0 +1,39 @@
+Problems: problems/problem_24.json
+Words:    "ei!" "ia! ia!" "r'lyeh" "yuggoth" "tsathoggua" "yogsothoth" "ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn."
+Args:     ./main -f problems/problem_24.json -p ei! -p ia! ia! -p r'lyeh -p yuggoth -p tsathoggua -p yogsothoth -p ph'nglui mglw'nafh cthulhu r'lyeh wgah'nagl fhtagn. --verbose --tag sol/2015-08-10T02:10:37-0700-24
+Commit:   dd3c7960bc0b9c691581f0704b98c8b5f08078e4
+
+Stat:
+ README | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+===DIFF===
+diff --git a/README b/README
+index 9fb9399..b71d53d 100644
+--- a/README
++++ b/README
+@@ -16,7 +16,7 @@ fungi, who transported humans through the Æther via so-called
+ "brain cylinders."
+ 
+ 
+-## Dependencies
++## Running the Solution
+ 
+ The following dependencies are required for the Haskell and C++
+ programs, respectively:
+@@ -27,6 +27,14 @@ programs, respectively:
+ 
+ Only the former is required to build the top-level Haskell binary.
+ 
++In addition to the required flags, we also support the following:
++
++* `--verbose`: outputs all the intermediate state along the way,
++  providing a nice visualization of the game.
++* `--tag TAG`: allows specifying the tag field for the solution.
++* `--score`: outputs the score for solutions immediately after
++  computing them.
++
+ 
+ ## Our Approach
+ 
+
