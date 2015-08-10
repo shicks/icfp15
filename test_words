@@ -4,8 +4,10 @@ use strict;
 
 my @probs = (15, 20);
 my @query = ();
-while ($_ = shift) {
-  my $num = $probs[0] or die "too many";
+while (@ARGV) {
+  $_ = shift;
+  my $num = shift @probs or die "too many";
+  next unless $_;
   my $code = $_;
   my $len = length($code) - 2;
   $code =~ s/(.).*(.)/$1$len$2/;
@@ -15,7 +17,6 @@ while ($_ = shift) {
   $json =~ s/CODE/$code/g;
   $json =~ s/SOL/$sol/g;
   push @query, $json;
-  shift @probs;
 
   open WORD, ">/tmp/word";
   print WORD "[$json]\n";

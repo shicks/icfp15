@@ -24,7 +24,7 @@ data Piece = Piece Unit Pos Int  -- unit, position, rotation
            deriving ( Show )
 
 spawn :: Unit -> Board -> Piece
-spawn u (Board b) = Piece u pos 0
+spawn u (Board b _) = Piece u pos 0
   where unitWidth = posX (snd sb) - posX (fst sb) + 1
         boardWidth = (posX $ snd $ bounds b) + 1
         sb = shapeBounds u
@@ -36,10 +36,10 @@ valid :: Piece -> Board -> Bool
 valid p b = all (emptyPos b) (realize p)
 
 emptyPos :: Board -> Pos -> Bool
-emptyPos (Board b) p = (bounds b `inRange` p) && (not $ b ! p)
+emptyPos (Board b _) p = (bounds b `inRange` p) && (not $ b ! p)
 
 boardWidth :: Board -> Int
-boardWidth (Board b) = 1 + (posX $ snd $ bounds b)
+boardWidth (Board b _) = 1 + (posX $ snd $ bounds b)
 
 -- *Expands a unit to all the positions its members will occupy
 realize :: Piece -> [Pos]
@@ -55,8 +55,15 @@ realize (Piece u pos r) = map (offset . rot . center) $ members u
 --         offset = (%+ pos)
 --         rot = rotate r
 
-realizeNeighbors :: S.Set Pos -> [(Pos, Int)]
-realizeNeighbors ms = filter (not . (`S.member` ms) . fst) $ concatMap around $ S.toList ms
+around' :: Board -> Pos -> [(Pos, Int)]
+around' b@(Board _ r) p = map fix $ around p
+  where fix (p, 5) | r!(posY p) > full = (p, 25)
+        fix z = z
+        full = 4 * boardWidth b `div` 5
+
+realizeNeighbors :: Board -> S.Set Pos -> [(Pos, Int)]
+realizeNeighbors b ms =
+  filter (not . (`S.member` ms) . fst) $ concatMap (around' b) $ S.toList ms
 
 realizeBelow :: S.Set Pos -> [Pos]
 realizeBelow ms = uniq $ sort $ [m %+ displacement d | m <- S.toList ms, d <- [SW, SE]]
@@ -69,7 +76,8 @@ realizeHeight ps = minimum $ map posY ps
 
 -- TODO(sdh): consider memoizing the row sizes to make bonus computation quicker
 score :: Int -> Piece -> Board -> Int
-score ls_old piece board = points - gap_penalty + height_bonus + same_row_bonus - cover_penalty
+score ls_old piece board = points - gap_penalty + height_bonus +
+                           same_row_bonus - cover_penalty - max 0 slant_penalty
   where points = line_points + line_bonus
         line_points = 100 * (1 + ls) * ls `div` 2
         cellsList = realize piece
@@ -86,7 +94,7 @@ score ls_old piece board = points - gap_penalty + height_bonus + same_row_bonus 
         -- TODO(sdh): weight underside gaps more heavily?
         -- TODO(sdh): consider weighting by # filled on the same line...
         gap_penalty = gap_factor * sum empty_neighbors
-        empty_neighbors = map snd $ filter (emptyPos board . fst) $ realizeNeighbors cellsSet
+        empty_neighbors = map snd $ filter (emptyPos board . fst) $ realizeNeighbors board cellsSet
         height_bonus = height_factor * height
         height = posY com
         -- height = realizeHeight cellsList
@@ -99,11 +107,14 @@ score ls_old piece board = points - gap_penalty + height_bonus + same_row_bonus 
         covered_empty = length $ filter emptyPos' covered_all
         covered_filled = length covered_all - covered_empty
         emptyPos' p = emptyPos board p && not (p `S.member` cellsSet)
+        xy_corr = avg (map (\(Pos x y) -> x * y) cellsList) -
+                  avg (map posX cellsList) * avg (map posY cellsList)
+        avg xs = sum xs `div` length xs
+        slant_penalty = if xy_corr < 0 then 2 else 0
         gap_factor = 2
         height_factor = 3
         same_row_factor = 3
         cover_penalty_factor = 10
-        
 
 -- This is more efficient than nub if duplicates are always together (why does this assumption break?!?)
 uniq :: Eq a => [a] -> [a]
