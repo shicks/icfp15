@@ -11,6 +11,7 @@ import Control.Applicative ( (<$>), (<*>) )
 import Control.Arrow ( first )
 import Data.Aeson ((.:), FromJSON(..), Value(..))
 import Data.Ix ( Ix(..) )
+import Data.List (transpose)
 
 data Dir = E | W | SE | SW
          deriving (Eq, Ord, Enum, Show)
@@ -21,8 +22,9 @@ data Command = Move Dir | Rotate CDir
           deriving (Eq, Ord, Show)
 commands = [Move SE, Move SW, Move E, Move W, Rotate CW, Rotate CCW]
 
-commandChars :: [Char]
-commandChars = map encode commands
+commandChars :: Int -> [Char]
+commandChars i = encoding !! (i `mod` 6)
+  where encoding = transpose $ map encode' commands
 
 encode :: Command -> Char
 encode (Move W) = 'p'  -- also ', !, ., 0, 3
@@ -32,6 +34,14 @@ encode (Move SE) = 'm'  -- also l, n, o, space, 5
 encode (Rotate CW) = 'd'  -- also q, r, v, z, 1
 encode (Rotate CCW) = 'k'  -- also s, t, u, w, x
 -- TODO(sdh): \t, \n, and \r are NOOPs, should we bother supporting decode?
+
+encode' :: Command -> String
+encode' (Move W) = "p'!.03"   
+encode' (Move E) = "bcefy2"   
+encode' (Move SW) = "aghij4"  
+encode' (Move SE) = "lmno 5"  
+encode' (Rotate CW) = "dqrvz1"
+encode' (Rotate CCW) = "kstuwx"
 
 decode :: Char -> Maybe Command
 decode c | c `elem` "p'!.03" = Just $ Move W

@@ -191,11 +191,12 @@ findBest initialPower wordList board (Piece unit p r) = search [(p, r, "", initi
           -- | not (hasPower w) && isSeen openSeen p = search queue end seen openSeen
           | otherwise = --trace ("ADDING MORE TO spot=" ++ show spot ++ ", queue=" ++ show queue) $
                         search (power ++ followups ++ queue) end (S.insert (strip spot) seen) openSeen'
-          where followups = map (\c -> apply unit c $ removePower spot) commandChars
+          where followups = map (\c -> apply unit c $ removePower spot) (commandChars seed)
                 power = if hasPower w
                         then [applyPower unit spot]
-                        else map (\w -> addPower unit w spot) $ rot'' (length queue) wordList
+                        else map (\w -> addPower unit w spot) $ rot'' seed wordList
                 openSeen' = insertSeen p openSeen
+                seed = length queue
         initialOpenSeen = openRows unit board
         piece :: Spot -> Piece
         piece (p, r, _, _) = Piece unit p r

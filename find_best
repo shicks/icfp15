@@ -1,0 +1,31 @@
+#!/usr/bin/perl
+
+use strict;
+
+$_ = `curl --user :xpjucYvS2nEAjnlhHLNAjO32W8TS5s0VhBCPQUOoWvU= -X GET -H "Content-Type: application/json" https://davar.icfpcontest.org/teams/232/solutions`;
+
+@_ = split /\},\{/;
+
+my %best = ();
+my %bestScore = ();
+
+foreach (@_) {
+  /seed":(\d+),/ or die "could not find seed";
+  my $seed = $1;
+  /problemId":(\d+),/ or die "could not find problem";
+  my $problem = $1;
+  /solution":"([^"]*)"/ or die "could not find solution";
+  my $solution = $1;
+  /score":(\d+),/ or die "could not find score";
+  my $score = $1;
+  my $tag = /tag":"(?:final-)?([^"]*)",/ ? "final-$1" : "final";
+  my $id = "$problem:$seed";
+  if (not defined $best{$id} or $score > $bestScore{$id}) {
+    $best{$id} = "{\"problemId\":$problem,\"seed\":$seed,\"tag\":\"$tag\",\"solution\":\"$solution\"}";
+    $bestScore{$id} = $score;
+  }
+}
+
+my @result = values %best;
+$" = ',';
+print "[@result]\n";
