@@ -20,10 +20,11 @@ data Unit = Unit { members :: [Pos]
                  , order :: Int
                  , neighbors :: [(Pos, Int)]  -- relative to the pivot, maps to penalty
                  , com :: Pos  -- center of mass relative to pivot
+                 , radius :: Int  -- radius of the piece from pivot
                  }
 
 unit :: [Pos] -> Pos -> Unit
-unit ms p = Unit (map shift ms) (shift p) extent bounds (findOrder ms p) ns com
+unit ms p = Unit (map shift ms) (shift p) extent bounds (findOrder ms p) ns com radius
   where xs = map posX $ ms
         ys = map posY $ ms
         px = posX p
@@ -49,11 +50,14 @@ unit ms p = Unit (map shift ms) (shift p) extent bounds (findOrder ms p) ns com
         -- Note: this isn't technically center of mass, it's just the
         -- center of the bounds, but it's generally a good approximation
         com = Pos ((maxX + minX) `div` 2) ((maxY + minY) `div` 2) %- p
+        radius = maximum $ map (dist . (%-p)) ms
+        dist p = maximum $ map (posY . flip rotate p) [0..5]
         
 
 instance Show Unit where
-  show (Unit members pivot extent _ o ns _ )
-         = "Order " ++ show o ++ ", " ++ show (length ns) ++ " neighbors\n"
+  show (Unit members pivot extent _ o ns _ r)
+         = "Order " ++ show o ++ ", " ++ show (length ns)
+           ++ " neighbors, radius " ++ show r ++ "\n"
            ++ show' False (range (Pos 0 0, extent))
     where width = 1 + posX extent
           show' _ [] = ""
